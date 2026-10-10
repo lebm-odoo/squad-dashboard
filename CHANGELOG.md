@@ -4,6 +4,10 @@ Each version has its section, the newest first; the page shows the entries of th
 Versions follow [semantic versioning](https://semver.org/): a fix bumps the patch (1.0.1), a new feature the minor (1.1.0),
 a change that needs something from the users (a new requirement, a config to redo) the major (2.0.0).
 
+## 1.0.1 - 2026-10-10
+
+- The update banner only shows for a new version, not for a change of the documentation.
+
 ## 1.0.0 - 2026-10-10
 
 - Squad: everyone on one screen, what they are on, merged and reviewed lately.

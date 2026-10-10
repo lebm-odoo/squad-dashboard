@@ -20,16 +20,21 @@ jobs:
         run: |
           sed -n '/^<script>$/,/^<\/script>$/p' index.html | sed '1d;$d' > page.js
           node --check page.js
-      - name: The version is bumped, with its changelog
+      - name: A change of the app is a new version, with its changelog
         run: |
+          base="origin/${{ github.base_ref }}"
           new=$(tr -d '[:space:]' < VERSION)
-          old=$(git show "origin/${{ github.base_ref }}:VERSION" 2>/dev/null | tr -d '[:space:]')
-          python3 - "${old:-0.0.0}" "$new" <<'PY'
+          old=$(git show "$base:VERSION" 2>/dev/null | tr -d '[:space:]')
+          if git diff --quiet "$base"...HEAD -- collector.py index.html && [ "$new" = "$old" ]; then
+            echo "The app does not change: no new version needed"
+            exit 0
+          fi
+          python3 - "${old:-0.0.0}" "$new" <<'PY' || exit 1
           import re, sys
           old, new = sys.argv[1:]
           if not re.fullmatch(r'\d+\.\d+\.\d+', new):
               sys.exit(f'VERSION must be X.Y.Z, not {new!r}')
           if tuple(map(int, new.split('.'))) <= tuple(map(int, old.split('.'))):
-              sys.exit(f'VERSION {new} must be greater than {old}, the version on the base branch')
+              sys.exit(f'The app changes: VERSION {new} must be greater than {old}, the version on the base branch')
           PY
           grep -q "^## $new" CHANGELOG.md || { echo "CHANGELOG.md has no section for $new"; exit 1; }

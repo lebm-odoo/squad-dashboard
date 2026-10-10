@@ -2082,9 +2082,17 @@ function renderStale(d, st, running) {
 }
 // A newer version of the page on the remote of its clone, with the way to take it (the collector fast-forwards, then
 // restarts on the new code).
+// A new version on the branch followed: its VERSION is greater than this one's (commits that leave the version as it is, like
+// documentation, come with the next one, without a banner); without VERSION files, any commit counts.
+const greaterVersion = (a, b) => {
+  const x = a.split('.').map(Number), y = b.split('.').map(Number);
+  const i = [0, 1, 2].find(k => x[k] !== y[k]);
+  return i !== undefined && x[i] > y[i];
+};
+const newVersion = v => !!v && v.behind > 0 && (!v.latest || !v.version || greaterVersion(v.latest, v.version));
 function renderVersion() {
   const banner = document.getElementById('version-banner'), v = state.status && state.status.version;
-  banner.hidden = !(v && v.behind > 0);
+  banner.hidden = !newVersion(v);
   if (banner.hidden) return;
   const manual = v.dirty || v.ahead;
   const notes = (v.notes || []).flatMap(n => n.items.map(item => `${n.version}: ${item}`));
@@ -2139,14 +2147,14 @@ function appCard() {
   const manual = v.dirty || v.ahead;
   const where = !v.clone ? 'This folder is no git clone: new versions cannot be known here (download it again to update).'
     : !v.upstream ? 'This clone has no upstream branch (git branch -u origin/master): new versions cannot be known.'
-    : `Version ${v.version || '?'} (${v.head}) of ${v.upstream} · ${v.behind ? (v.latest && v.latest !== v.version ? `version ${v.latest} available` : `${plural(v.behind, 'change')} available`) : 'up to date'}${v.ahead ? ` · ${plural(v.ahead, 'local commit')}` : ''}${v.dirty ? ' · local changes' : ''} · checked ${rel(v.checked)}.`;
+    : `Version ${v.version || '?'} (${v.head}) of ${v.upstream} · ${!newVersion(v) ? `up to date${v.behind ? ` (${plural(v.behind, 'commit')} without a new version)` : ''}` : v.latest ? `version ${v.latest} available` : `${plural(v.behind, 'change')} available`}${v.ahead ? ` · ${plural(v.ahead, 'local commit')}` : ''}${v.dirty ? ' · local changes' : ''} · checked ${rel(v.checked)}.`;
   return h('div', { class: 'card', style: 'margin-top:16px' },
     h('h1', { style: 'font-size:17px' }, 'This app'),
     h('p', { class: 'muted', style: 'margin:0;font-size:13px' }, where),
     v.error ? h('p', { class: 'error', style: 'margin:6px 0 0;font-size:13px' }, `The remote could not be read: ${v.error}`) : null,
-    v.behind && v.notes && v.notes.length ? v.notes.map(n => [h('div', { class: 'muted small', style: 'margin-top:8px;font-weight:600' }, `What is new in ${n.version}`), h('ul', { class: 'app-changes', style: 'margin-top:2px' }, n.items.map(item => h('li', null, item)))])
-      : v.behind && v.changes && v.changes.length ? h('ul', { class: 'app-changes' }, v.changes.map(c => h('li', null, c)), v.behind > v.changes.length ? h('li', { class: 'muted' }, `+ ${v.behind - v.changes.length} more`) : null) : null,
-    manual && v.behind ? h('p', { class: 'muted', style: 'margin:6px 0 0;font-size:13px' }, 'Local changes or commits: update by hand with git pull, nothing is overwritten from here.') : null,
+    newVersion(v) && v.notes && v.notes.length ? v.notes.map(n => [h('div', { class: 'muted small', style: 'margin-top:8px;font-weight:600' }, `What is new in ${n.version}`), h('ul', { class: 'app-changes', style: 'margin-top:2px' }, n.items.map(item => h('li', null, item)))])
+      : newVersion(v) && v.changes && v.changes.length ? h('ul', { class: 'app-changes' }, v.changes.map(c => h('li', null, c)), v.behind > v.changes.length ? h('li', { class: 'muted' }, `+ ${v.behind - v.changes.length} more`) : null) : null,
+    manual && newVersion(v) ? h('p', { class: 'muted', style: 'margin:6px 0 0;font-size:13px' }, 'Local changes or commits: update by hand with git pull, nothing is overwritten from here.') : null,
     v.upstream ? h('div', { class: 'actions', style: 'margin-top:14px' },
       h('button', { class: 'btn', onclick: checkApp }, 'Check now'),
       h('button', { class: 'btn primary', disabled: !v.behind || manual || (state.status && state.status.state === 'running'), onclick: updateApp,
