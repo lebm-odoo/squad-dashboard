@@ -88,7 +88,7 @@ Only the people of the squad are taken over; what is already here is kept.
 ## Versions
 
 The version installed is in `VERSION`, what each version brings in `CHANGELOG.md`. `master` holds released versions only:
-see `CONTRIBUTING.md` for the branches, the version bumps and the checks of a pull request.
+see `CONTRIBUTING.md` for a change from start to end: its branch, its pull request, its version and the checks.
 
 ## Options
 
