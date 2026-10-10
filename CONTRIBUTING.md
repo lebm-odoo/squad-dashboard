@@ -33,10 +33,14 @@ git push -u origin fix/board-alignment
 gh pr create --base master --fill
 ```
 
-After a review: **Squash and merge** (`gh pr merge --squash --delete-branch`). The release workflow then tags `v1.0.2`,
-publishes the release with the changelog section, and the installed apps show their update banner.
+The pull request becomes **one commit** on `master`, whose message is the title and description of the pull request:
+write them like a commit message (what, and why), and keep them right if the review changes things. Commits like
+"fix review" can stay in the branch: they disappear at the merge.
 
-If another pull request was merged in the meantime, the checks ask for a branch up to date with `master`:
+After a review: **Squash and merge**. The release workflow then tags `v1.0.2`, publishes the release with the changelog
+section, and the installed apps show their update banner.
+
+If `master` moved in the meantime (another pull request merged), put your branch on top of it:
 
 ```sh
 git fetch origin
@@ -72,25 +76,3 @@ first two locally:
 python3 -m py_compile collector.py
 sed -n '/^<script>$/,/^<\/script>$/p' index.html | sed '1d;$d' > /tmp/page.js && node --check /tmp/page.js
 ```
-
-## Protecting `master`
-
-An admin of the repository protects `master` (Settings → Branches → Add rule, or Settings → Rules → Rulesets): require a
-pull request with at least one approval, require the `checks` status check with the branch up to date, and block
-force-pushes and deletion. With `gh`:
-
-```sh
-gh api -X PUT repos/lebm-odoo/squad-dashboard/branches/master/protection --input - <<'JSON'
-{
-  "required_status_checks": {"strict": true, "contexts": ["checks"]},
-  "enforce_admins": false,
-  "required_pull_request_reviews": {"required_approving_review_count": 1},
-  "restrictions": null,
-  "allow_force_pushes": false,
-  "allow_deletions": false
-}
-JSON
-```
-
-Protected branches on a private repository need a paid GitHub plan for its owner (GitHub Pro for a personal account, Team
-or Enterprise for an organisation); on a public repository they are free.
