@@ -1,0 +1,10 @@
+config.json
+cache.json
+history.json
+history.json.bak
+data.json
+data.js
+todos.json
+*.tmp
+__pycache__/
+.claude/

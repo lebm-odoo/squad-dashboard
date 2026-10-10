@@ -1,0 +1,35 @@
+name: checks
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: The collector compiles
+        run: python -m py_compile collector.py
+      - name: The script of the page parses
+        run: |
+          sed -n '/^<script>$/,/^<\/script>$/p' index.html | sed '1d;$d' > page.js
+          node --check page.js
+      - name: The version is bumped, with its changelog
+        run: |
+          new=$(tr -d '[:space:]' < VERSION)
+          old=$(git show "origin/${{ github.base_ref }}:VERSION" 2>/dev/null | tr -d '[:space:]')
+          python3 - "${old:-0.0.0}" "$new" <<'PY'
+          import re, sys
+          old, new = sys.argv[1:]
+          if not re.fullmatch(r'\d+\.\d+\.\d+', new):
+              sys.exit(f'VERSION must be X.Y.Z, not {new!r}')
+          if tuple(map(int, new.split('.'))) <= tuple(map(int, old.split('.'))):
+              sys.exit(f'VERSION {new} must be greater than {old}, the version on the base branch')
+          PY
+          grep -q "^## $new" CHANGELOG.md || { echo "CHANGELOG.md has no section for $new"; exit 1; }
