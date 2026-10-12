@@ -1,7 +1,11 @@
 # Squad dashboard
 
 A local page for a squad leader: what each person of the squad is working on, what they reviewed, and how their own work
-evolves. It is meant to be shown in front of the whole squad: no ranking, no score, nobody compared with anybody.
+evolves.
+
+https://github.com/user-attachments/assets/a909e506-04f2-46d1-885c-a80cb03e4953
+
+*A tour of the page, with made-up data.*
 
 ## What it shows
 
