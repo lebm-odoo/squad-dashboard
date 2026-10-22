@@ -36,7 +36,7 @@ const en = {
     string
   >,
   vaultNone:
-    'Docker keeps them in an encrypted file of its volume: choose its passphrase, 12 characters or more. It is asked again after each restart, in Settings › Connections.',
+    'Docker keeps them in an encrypted file of its volume: choose its passphrase, 12 characters or more. It is asked again on opening after each restart.',
   lookAgain: 'Look again',
   collect: 'Start the first collection',
   start: 'Start',
@@ -66,7 +66,7 @@ const fr: typeof en = {
     odoo: 'aucune pour l’instant : facultative, pour les tâches Odoo',
   },
   vaultNone:
-    'Docker les garde dans un fichier chiffré de son volume : choisir sa phrase de passe, 12 caractères ou plus. Elle est redemandée après chaque redémarrage, dans Réglages › Connexions.',
+    'Docker les garde dans un fichier chiffré de son volume : choisir sa phrase de passe, 12 caractères ou plus. Elle est redemandée à l’ouverture après chaque redémarrage.',
   lookAgain: 'Regarder à nouveau',
   collect: 'Lancer la première collecte',
   start: 'Commencer',

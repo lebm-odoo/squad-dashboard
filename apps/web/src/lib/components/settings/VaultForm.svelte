@@ -8,7 +8,11 @@ import { m } from '#lib/i18n.svelte.ts';
 import { keysChanged } from '#lib/setup.svelte.ts';
 
 /** Docker's vault: its passphrase creates or unlocks it, a button locks it, a forgotten passphrase erases it. */
-let { status }: { status: { exists: boolean; locked: boolean } } = $props();
+let {
+  status,
+  autofocus = false,
+  class: className = '',
+}: { status: { exists: boolean; locked: boolean }; autofocus?: boolean; class?: string } = $props();
 let passphrase = $state('');
 let busy = $state(false);
 let forgot = $state(false);
@@ -30,7 +34,7 @@ async function act(action: 'create' | 'unlock' | 'lock' | 'reset') {
 }
 </script>
 
-<div class="flex flex-wrap items-center gap-2">
+<div class={['flex flex-wrap items-center gap-2', className]}>
   {#if !status.exists || status.locked}
     {@const action = status.exists ? 'unlock' : 'create'}
     <Input
@@ -39,6 +43,7 @@ async function act(action: 'create' | 'unlock' | 'lock' | 'reset') {
       bind:value={passphrase}
       placeholder={words.passphrase}
       autocomplete="off"
+      {autofocus}
       onkeydown={(event) => event.key === 'Enter' && passphrase && act(action)}
     />
     <Button size="sm" disabled={busy || !passphrase} onclick={() => act(action)}>{words[action]}</Button>
