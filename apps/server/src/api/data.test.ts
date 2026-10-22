@@ -89,7 +89,7 @@ describe.skipIf(!testDatabaseUrl)('the API', () => {
           clones: [],
           configPath: '/nonexistent/config.json',
           loadConfig: async () => dashboardConfig.parse({ me: 'anne' }),
-          release: { version: 'test', repo: 'o/r', runtime: 'bun' },
+          release: { version: 'test', repo: 'o/r', runtime: 'bun', commit: null, startedAt: 0 },
           secrets: {
             status: async () => ({ kind: 'keyring', exists: true, locked: false }),
             get: async () => null,

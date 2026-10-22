@@ -19,6 +19,9 @@ FROM manifests AS runtime-deps
 RUN bun install --frozen-lockfile --production
 
 FROM oven/bun:1.4.3-slim
+# The commit the image is built from, shown in the settings: the image holds no .git.
+ARG COMMIT
+ENV COMMIT=$COMMIT
 RUN apt-get update \
   && apt-get install -y --no-install-recommends git openssh-client ca-certificates \
   && rm -rf /var/lib/apt/lists/* \

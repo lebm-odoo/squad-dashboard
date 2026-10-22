@@ -21,5 +21,7 @@ printf %s "${ODOO_API_KEY:-$(secret-tool lookup service squad-dashboard account 
 unset GH_TOKEN ODOO_API_KEY
 SD_EMAIL="${SD_EMAIL:-$(git config --global user.email 2>/dev/null || true)}"
 export SD_EMAIL
+SD_COMMIT="$(git rev-parse --short HEAD 2>/dev/null)$(git status --porcelain --untracked-files=no 2>/dev/null | grep -q . && echo +)"
+export SD_COMMIT
 compose up -d --build "$@"
 echo "http://localhost:${SD_PORT:-8766}"

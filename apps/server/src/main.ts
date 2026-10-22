@@ -1,7 +1,8 @@
-import { join, relative } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { serveStatic } from 'hono/bun';
 import pkg from '../../../package.json';
 import { createApp } from './app';
+import { runningCommit } from './commit';
 import { loadConfig } from './config';
 import { connect, database, ensureDatabase, migrateDatabase } from './db/client';
 import { dashboardStore } from './db/dashboard';
@@ -13,6 +14,7 @@ import { openClones } from './sources/clones';
 import { Collection } from './sync/collect';
 
 const env = readEnv();
+const commit = runningCommit(resolve(import.meta.dir, '../../..'));
 await ensureDatabase(env.DATABASE_URL);
 const sql = connect(env.DATABASE_URL);
 const db = database(sql);
@@ -31,7 +33,13 @@ const settings = settingsPort({
   loadConfig: config,
   secrets,
   whoami,
-  release: { version: pkg.version, repo: pkg.repository.replace(/^github:/, ''), runtime: env.RUNTIME },
+  release: {
+    version: pkg.version,
+    repo: pkg.repository.replace(/^github:/, ''),
+    runtime: env.RUNTIME,
+    commit,
+    startedAt: Date.now() / 1000,
+  },
 });
 const app = createApp({
   version: pkg.version,
@@ -51,4 +59,4 @@ app.use('/*', serveStatic({ root: web }));
 app.get('/*', serveStatic({ path: join(web, 'index.html') }));
 
 Bun.serve({ hostname: env.HOST, port: env.PORT, fetch: app.fetch, idleTimeout: 60 });
-console.log(`squad-dashboard ${pkg.version} : ${env.PUBLIC_URL ?? `http://localhost:${env.PORT}/`}`);
+console.log(`squad-dashboard ${pkg.version} (${commit ?? 'commit inconnu'}) : ${env.PUBLIC_URL ?? `http://localhost:${env.PORT}/`}`);

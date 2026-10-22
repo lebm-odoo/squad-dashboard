@@ -25,7 +25,7 @@ type SettingsDeps = {
   secrets: SecretStore;
   whoami: () => Promise<string>;
   /** This version, the GitHub repository its releases are published on, and how the server runs. */
-  release: { version: string; repo: string; runtime: 'bun' | 'docker' };
+  release: { version: string; repo: string; runtime: 'bun' | 'docker'; commit: string | null; startedAt: number };
   fetcher?: typeof fetch;
 };
 
@@ -63,6 +63,8 @@ export function settingsPort({
     current: release.version,
     repo: release.repo,
     runtime: release.runtime,
+    commit: release.commit,
+    started_at: release.startedAt,
     latest: checked?.latest ?? null,
     newer: !!checked?.latest && newer(checked.latest.version, release.version),
     checked_at: checked?.at ?? null,

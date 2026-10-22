@@ -47,7 +47,17 @@ const app = (overrides: Partial<AppDeps> = {}) =>
       },
       dataStats: async () => ({ size: 0, tables: {} }),
       derive: async () => ({ features: 0, reviews: 0, seconds: 0 }),
-      updates: async () => ({ current: 'test', repo: 'o/r', runtime: 'bun', latest: null, newer: false, checked_at: null, error: null }),
+      updates: async () => ({
+        current: 'test',
+        repo: 'o/r',
+        runtime: 'bun',
+        commit: null,
+        started_at: 0,
+        latest: null,
+        newer: false,
+        checked_at: null,
+        error: null,
+      }),
       checkUpdates: async () => {
         throw new Error('pas dans ce test');
       },

@@ -79,6 +79,9 @@ export type UpdateState = {
   current: string;
   repo: string;
   runtime: 'bun' | 'docker';
+  /** The commit of the code that answers, and when its server started: an old server still running shows. */
+  commit: string | null;
+  started_at: number;
   latest: Release | null;
   newer: boolean;
   checked_at: number | null;

@@ -38,6 +38,17 @@ async function check() {
       <dl class="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-6 gap-y-1.5 text-[13px]">
         <dt class="text-muted-foreground">{words.installed}</dt>
         <dd class="font-medium tabular-nums">v{v.current}</dd>
+        <dt class="text-muted-foreground">{words.commit}</dt>
+        <dd class="tabular-nums">
+          {#if v.commit}
+            <a class="font-mono text-link" href="https://github.com/{v.repo}/commit/{v.commit.replace('+', '')}" target="_blank" rel="noopener">{v.commit.replace('+', '')}</a>
+            {#if v.commit.endsWith('+')}<span class="text-muted-foreground"> · {words.changed}</span>{/if}
+          {:else}
+            <span class="text-muted-foreground">{words.unknown}</span>
+          {/if}
+        </dd>
+        <dt class="text-muted-foreground">{words.started}</dt>
+        <dd title={fdate(v.started_at)}>{rel(v.started_at)}</dd>
         <dt class="text-muted-foreground">{words.latest}</dt>
         <dd class="tabular-nums">
           {#if v.latest}

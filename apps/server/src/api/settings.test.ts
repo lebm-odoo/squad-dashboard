@@ -39,7 +39,7 @@ describe.skipIf(!testDatabaseUrl)('the settings', () => {
           loadConfig: config,
           secrets,
           whoami: async () => 'anne',
-          release: { version: '2.0.0', repo: 'o/r', runtime: 'bun' },
+          release: { version: '2.0.0', repo: 'o/r', runtime: 'bun', commit: 'abc1234', startedAt: 1000 },
           fetcher,
         });
         const app = createApp({
@@ -112,7 +112,12 @@ describe.skipIf(!testDatabaseUrl)('the settings', () => {
         expect(checked.clones).toMatchObject([{ repo: 'odoo', ok: true }]);
         expect(checked.runbot.ok).toBe(true);
 
-        expect((await call('GET', '/api/version'))[1]).toMatchObject({ current: '2.0.0', latest: null, checked_at: null });
+        expect((await call('GET', '/api/version'))[1]).toMatchObject({
+          current: '2.0.0',
+          commit: 'abc1234',
+          started_at: 1000,
+          latest: null,
+        });
         const [, update] = await call('POST', '/api/version/check');
         expect(update).toMatchObject({ current: '2.0.0', newer: true, latest: { version: '2.1.0' }, error: null });
 

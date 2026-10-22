@@ -18,7 +18,10 @@ services:
       retries: 30
 
   app:
-    build: .
+    build:
+      context: .
+      args:
+        COMMIT: ${SD_COMMIT:-}
     depends_on:
       db:
         condition: service_healthy

@@ -176,6 +176,9 @@ then rebuilds the page, or rebuilds and restarts Docker. The server migrates the
 tells when a version is out: it is read on GitHub on a click and with each full update, never in the background. To go
 back: `git checkout <previous tag>`, then `pg_restore --clean` of the backup.
 
+Settings › About also shows the commit the answering server runs and when it started: still the old one after a restart,
+an older server holds the port (`fuser -k 8766/tcp` stops it).
+
 ## Versions
 
 The version installed is in `package.json`, what each version brings in `CHANGELOG.md`. `master` holds released versions
