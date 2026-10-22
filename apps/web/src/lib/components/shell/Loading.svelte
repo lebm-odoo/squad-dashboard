@@ -5,7 +5,7 @@ type Shape = 'desk' | 'work' | 'journey' | 'squad' | 'settings' | 'card';
 
 /**
  * A page being read, in its own shape: its cards, tables and charts as bones under one sheen of the brand's colours, the
- * mark tracing its S where the title goes.
+ * mark tracing its D where the title goes.
  */
 let { label, shape }: { label: string; shape: Shape } = $props();
 const heights = [34, 52, 44, 70, 58, 82, 64, 46, 76, 92, 68, 54, 72, 86, 60, 78, 50, 66];

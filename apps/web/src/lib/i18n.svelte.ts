@@ -25,7 +25,7 @@ export function setLocale(locale: Locale) {
 const en = {
   intl: 'en-GB',
   brand: 'Squad Dashboard',
-  tagline: 'Me first, then my squad',
+  tagline: 'The super LEBM tool',
   theme: 'Light / dark theme',
   update: 'Update',
   updateTitle: 'git fetch, runbot, mergebot, GitHub and Odoo: Me first, then the squad',
@@ -658,7 +658,7 @@ const en = {
 const fr: typeof en = {
   intl: 'fr-FR',
   brand: 'Squad Dashboard',
-  tagline: 'Moi d’abord, puis mon squad',
+  tagline: 'Le super outil de LEBM',
   theme: 'Thème clair / sombre',
   update: 'Mettre à jour',
   updateTitle: 'git fetch, runbot, mergebot, GitHub et Odoo : Moi d’abord, puis le squad',

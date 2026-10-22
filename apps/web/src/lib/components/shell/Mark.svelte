@@ -1,5 +1,5 @@
 <script lang="ts">
-/** The favicon's mark: its tile pops in and its S draws itself once, or traces it again and again while a page loads. */
+/** The favicon's mark: its tile pops in and its D draws itself once, or traces it again and again while a page loads. */
 let { loop = false, class: className = '' }: { loop?: boolean; class?: string } = $props();
 const id = $props.id();
 </script>
@@ -7,8 +7,9 @@ const id = $props.id();
 <svg class={['mark', loop && 'loop', className]} viewBox="0 0 32 32" aria-hidden="true">
   <defs>
     <linearGradient id="{id}-tile" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2a78d6" />
-      <stop offset="1" stop-color="#7a4fe0" />
+      <stop offset="0" stop-color="#12a150" />
+      <stop offset="0.5" stop-color="#7ab40d" />
+      <stop offset="1" stop-color="#e0a905" />
     </linearGradient>
     <linearGradient id="{id}-shine" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#fff" stop-opacity="0" />
@@ -20,8 +21,8 @@ const id = $props.id();
   <g class="tile">
     <rect width="32" height="32" rx="7" fill="url(#{id}-tile)" />
     <path
-      class="s"
-      d="M21.5 7.5H13.25a4.25 4.25 0 0 0 0 8.5h5.5a4.25 4.25 0 0 1 0 8.5H10.5"
+      class="letter"
+      d="M10.5 8.5V23.5H14a7.5 7.5 0 0 0 0-15Z"
       pathLength="1"
       fill="none"
       stroke="#fff"
@@ -41,7 +42,7 @@ const id = $props.id();
     transform-origin: center;
     animation: pop 0.6s cubic-bezier(0.3, 0.7, 0.4, 1) both;
   }
-  .s {
+  .letter {
     stroke-dasharray: 1;
     animation: draw 0.7s 0.25s ease-in-out both;
   }
@@ -54,7 +55,7 @@ const id = $props.id();
   .loop .tile {
     animation: breathe 1.6s ease-in-out infinite;
   }
-  .loop .s {
+  .loop .letter {
     animation: trace 1.6s ease-in-out infinite;
   }
   .loop .shine {
@@ -110,7 +111,7 @@ const id = $props.id();
   }
   @media (prefers-reduced-motion: reduce) {
     .tile,
-    .s,
+    .letter,
     .shine {
       animation: none !important;
     }

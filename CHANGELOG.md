@@ -15,7 +15,7 @@ version's.
   `bun run import-v1` once to keep the history, the to-dos and the task changes of this version.
 - The first page asks what to follow: me alone, or me and my squad; it starts from the squad of the config.json already
   there.
-- Me comes first, where the page opens: today, what waits for me, what I am on and what waits for others, the most pressing
+- Me, where the page opens: today, what waits for me, what I am on and what waits for others, the most pressing
   first; my work and my journey, apart from the squad's.
 - The work of others I touch shows whole: a review asked of me or given, the PRs of my tasks, with their versions,
   forward-ports, task and reviews. Only these PRs and branches are read, not the rest of their authors' work.
@@ -33,7 +33,8 @@ version's.
   display, the data and the version.
 - English by default, French from the first page or the settings; light and dark theme; a search of pages, people and
   features (Ctrl K).
-- An opening screen once a session, its logo drawing itself; the first page shows the logo too.
+- A logo of its own, a D in green, lemon and yellow; an opening screen once a session, the logo drawing itself; the first
+  page shows the logo too.
 - In its own window from the application launcher: `scripts/app.sh install`. In Docker: `scripts/docker-up.sh`.
 - Settings › About tells when a new version is out; `scripts/update.sh` installs it after saving the database.
 

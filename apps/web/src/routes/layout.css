@@ -46,8 +46,8 @@
   --p5: #008300;
   --p6: #4a3aa7;
   --p7: #e34948;
-  --brand: #2a78d6;
-  --brand-2: #7a4fe0;
+  --brand: #12a150;
+  --brand-2: #e0a905;
 }
 
 .dark {
@@ -87,8 +87,8 @@
   --p5: #008300;
   --p6: #9085e9;
   --p7: #e66767;
-  --brand: #3987e5;
-  --brand-2: #a084f2;
+  --brand: #2fbf62;
+  --brand-2: #f0b90b;
 }
 
 @theme inline {
