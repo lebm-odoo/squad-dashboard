@@ -1,7 +1,7 @@
 #!/bin/sh
 # The dashboard as an app, in a Chrome window of its own without the browser around it: `scripts/app.sh install` once
-# adds it to the application launcher. It starts the server when none answers, and stops it when the window closes,
-# once a running collection is over.
+# adds it to the application launcher. It starts the server when none answers; that server stops on its own once its
+# last window closed and the collection running is over.
 set -e
 root=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
 icon="$root/apps/web/src/lib/assets/favicon.svg"
@@ -38,13 +38,14 @@ up() { curl -s -o /dev/null "${url}api/health"; }
 browser=$(command -v google-chrome-stable google-chrome chromium-browser chromium | head -n 1)
 [ -n "$browser" ] || fail 'il faut Google Chrome ou Chromium'
 
+mkdir -p "$data"
 server=
 if ! up; then
   PATH=$PATH:$HOME/.bun/bin
-  mkdir -p "$data"
   cd "$root"
   [ -d apps/web/build ] || bun run build > "$data/server.log" 2>&1 || fail "la page ne se construit pas : $data/server.log"
-  bun apps/server/src/main.ts > "$data/server.log" 2>&1 &
+  # It stops on its own 30 seconds after its last window closed: Chrome may outlive the window, this script be killed.
+  STOP_WHEN_IDLE=30 bun apps/server/src/main.ts > "$data/server.log" 2>&1 &
   server=$!
   until up; do
     kill -0 "$server" 2> /dev/null || fail "le serveur s'est arrêté : $data/server.log"
@@ -52,8 +53,5 @@ if ! up; then
   done
 fi
 
-# A profile of its own: its own window, and this call returns only when it closes.
-"$browser" --app="$url" --user-data-dir="$data/app" --no-first-run --no-default-browser-check
-[ -n "$server" ] || exit 0
-while curl -s "${url}api/collect" | grep -q '"running":true'; do sleep 5; done
-kill "$server"
+# A profile of its own, its own window; what Chrome says of itself goes to a log.
+exec "$browser" --app="$url" --user-data-dir="$data/app" --no-first-run --no-default-browser-check > "$data/chrome.log" 2>&1

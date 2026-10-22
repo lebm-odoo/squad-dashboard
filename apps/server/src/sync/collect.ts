@@ -50,6 +50,11 @@ export class Collection {
     };
   }
 
+  /** How many follow it: each page open listens to its progress. */
+  get followers() {
+    return this.listeners.size;
+  }
+
   /** Starts a collection, unless one runs. */
   start(scope: CollectScope) {
     if (this.state.running) return null;

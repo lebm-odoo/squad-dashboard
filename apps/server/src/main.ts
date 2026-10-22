@@ -41,6 +41,7 @@ const settings = settingsPort({
     startedAt: Date.now() / 1000,
   },
 });
+const collection = new Collection({ db, clones, loadConfig: config, secrets, settings: () => settings.collectSettings() });
 const app = createApp({
   version: pkg.version,
   hosts: env.ALLOWED_HOSTS,
@@ -51,7 +52,7 @@ const app = createApp({
   settings,
   whoami,
   openUrl: env.RUNTIME === 'bun' ? (url) => void Bun.spawn(['xdg-open', url], { stdio: ['ignore', 'ignore', 'ignore'] }) : undefined,
-  collection: new Collection({ db, clones, loadConfig: config, secrets, settings: () => settings.collectSettings() }),
+  collection,
 });
 const web = relative(process.cwd(), env.WEB_DIR);
 app.all('/api/*', (c) => c.json({ error: 'route inconnue' }, 404));
@@ -59,4 +60,12 @@ app.use('/*', serveStatic({ root: web }));
 app.get('/*', serveStatic({ path: join(web, 'index.html') }));
 
 Bun.serve({ hostname: env.HOST, port: env.PORT, fetch: app.fetch, idleTimeout: 60 });
+// In its own window, the server goes with its last page, once the collection running is over.
+if (env.STOP_WHEN_IDLE) {
+  let busy = Date.now();
+  setInterval(() => {
+    if (collection.followers || collection.state.running) busy = Date.now();
+    else if (Date.now() - busy > env.STOP_WHEN_IDLE * 1000) process.exit(0);
+  }, 5000);
+}
 console.log(`squad-dashboard ${pkg.version} (${commit ?? 'commit inconnu'}) : ${env.PUBLIC_URL ?? `http://localhost:${env.PORT}/`}`);

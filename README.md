@@ -53,8 +53,9 @@ scripts/app.sh install   # once: "Dashboard" in the launcher (~/.local/share/app
 scripts/app.sh           # what the launcher runs
 ```
 
-The script starts the server when none answers on the port, and stops it when the window closes, once a running
-collection is over; its log goes to `~/.local/share/squad-dashboard/server.log`. The window has its own Chrome profile, and
+The script starts the server when none answers on the port; that server stops on its own 30 seconds after its last window
+closed, once a running collection is over. Its log goes to `~/.local/share/squad-dashboard/server.log`, Chrome's to
+`chrome.log` next to it. The window has its own Chrome profile, and
 the links to GitHub, mergebot or runbot open in the default browser, where you are logged in. For the compositor, the
 window is `chrome-127.0.0.1__-Default` (its Wayland app-id).
 

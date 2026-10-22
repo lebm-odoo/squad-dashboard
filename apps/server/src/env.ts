@@ -27,6 +27,8 @@ export function readEnv(source: Record<string, string | undefined> = process.env
       /** How the server runs, for the page to give the right update command. */
       RUNTIME: z.enum(['bun', 'docker']).default('bun'),
       PUBLIC_URL: z.url().optional(),
+      /** Seconds without any page open, and no collection running, after which the server stops: 0 never. */
+      STOP_WHEN_IDLE: z.coerce.number().int().min(0).default(0),
     })
     .parse(source);
 }
