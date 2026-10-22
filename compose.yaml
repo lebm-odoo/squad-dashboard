@@ -31,21 +31,10 @@ services:
       CLONES_DIR: /clones
       # Days are counted on the office clock, not UTC.
       TZ: ${TZ:-Europe/Brussels}
-      # The git e-mail that tells who you are: the container has no home git config.
-      GIT_CONFIG_COUNT: 1
-      GIT_CONFIG_KEY_0: user.email
-      GIT_CONFIG_VALUE_0: ${SD_EMAIL:-}
     # Published on this machine only: the dashboard holds nominative data.
     ports:
       - 127.0.0.1:${SD_PORT:-8766}:8766
     volumes:
-      - type: bind
-        source: ./config.json
-        target: /config/config.json
-        bind:
-          create_host_path: false
-          # Relabelled for containers: with SELinux enforcing (Fedora), a file of the home directory is unreadable otherwise.
-          selinux: z
       - data:/data
       # The odoo, enterprise and upgrade clones alone, written by the fetch: nothing else of their folder is reachable. Not
       # relabelled for SELinux: relabelling would walk millions of files of working clones; the container reads them
@@ -53,22 +42,12 @@ services:
       - { type: bind, source: "${SD_CLONES:-..}/odoo", target: /clones/odoo, bind: { create_host_path: false } }
       - { type: bind, source: "${SD_CLONES:-..}/enterprise", target: /clones/enterprise, bind: { create_host_path: false } }
       - { type: bind, source: "${SD_CLONES:-..}/upgrade", target: /clones/upgrade, bind: { create_host_path: false } }
-    # The host's GitHub token (gh) and the Odoo key the V1 kept (keyring), written by scripts/docker-up.sh: mounted
-    # read-only in /run/secrets, out of the environment that `docker inspect` shows and every git process inherits.
-    secrets: [github_token, odoo_api_key]
     # The server needs no privilege: it listens above port 1024 and runs as the image's user.
     cap_drop: [ALL]
     security_opt:
       - label=disable
       - no-new-privileges:true
     networks: [internal, outside]
-
-# Files of the session's runtime directory: in memory, readable by its user alone, gone at logout.
-secrets:
-  github_token:
-    file: ${XDG_RUNTIME_DIR}/squad-dashboard/github_token
-  odoo_api_key:
-    file: ${XDG_RUNTIME_DIR}/squad-dashboard/odoo_api_key
 
 volumes:
   pgdata:

@@ -8,7 +8,9 @@ import { slide } from 'svelte/transition';
 import { toast } from 'svelte-sonner';
 import { api, messageOf } from '#lib/api.ts';
 import Seg from '#lib/components/Seg.svelte';
+import SecretInput from '#lib/components/settings/SecretInput.svelte';
 import TokenHelp from '#lib/components/settings/TokenHelp.svelte';
+import VaultForm from '#lib/components/settings/VaultForm.svelte';
 import Mark from '#lib/components/shell/Mark.svelte';
 import { Button } from '#lib/components/ui/button/index.ts';
 import { Checkbox } from '#lib/components/ui/checkbox/index.ts';
@@ -98,6 +100,8 @@ async function start() {
     {#if setup.isError}
       <p class="text-critical">{messageOf(setup.error)}</p>
     {:else if setup.data}
+      {@const vault = setup.data.vault}
+      {@const docker = vault.kind === 'file'}
       <div class="grid gap-3 md:grid-cols-2" role="radiogroup" aria-label={w.title}>
         {#each ['me', 'squad'] as const as key (key)}
           {@const [title, text] = w.follows[key] ?? ['', '']}
@@ -142,6 +146,12 @@ async function start() {
           <p class="text-sm font-medium">{w.connections}</p>
           <Button variant="outline" size="sm" onclick={() => setup.refetch()}>{w.lookAgain}</Button>
         </div>
+        {#if docker && (!vault.exists || vault.locked)}
+          <div class="grid gap-2 border-t pt-3">
+            <p class="text-[13px]">{vault.exists ? m().settings.connections.fileLocked : w.vaultNone}</p>
+            <VaultForm status={vault} />
+          </div>
+        {/if}
         {#each ['github', 'odoo'] as const as kind (kind)}
           {@const source = setup.data.keys[kind]}
           <div class="grid gap-1.5 border-t pt-3">
@@ -151,7 +161,17 @@ async function start() {
                 · {source === 'none' ? w.keyMissing[kind] : w.keyFound(m().settings.connections.sources[kind][source] ?? source)}
               </span>
             </p>
-            {#if source === 'none'}<TokenHelp {kind} />{/if}
+            {#if source === 'none'}
+              {#if docker && !vault.locked}
+                <div class="flex flex-wrap items-center gap-2">
+                  <SecretInput
+                    name={kind === 'github' ? 'github_token' : 'odoo_api_key'}
+                    label={kind === 'github' ? m().settings.connections.githubTitle : m().settings.connections.odooTitle}
+                  />
+                </div>
+              {/if}
+              <TokenHelp {kind} {docker} paste={!docker} />
+            {/if}
           </div>
         {/each}
       </div>

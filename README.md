@@ -84,30 +84,27 @@ window is `chrome-127.0.0.1__-Default` (its Wayland app-id).
 ### With Docker
 
 Requirements: Docker and Compose (Fedora: `sudo dnf install moby-engine docker-compose`, then
-`sudo systemctl enable --now docker`), the clones in the parent folder (else `SD_CLONES=<their folder>`), and
-`gh auth login` done.
+`sudo systemctl enable --now docker`), and the clones in the parent folder (else `SD_CLONES=<their folder>`).
 
 ```sh
-scripts/docker-up.sh   # docker compose up -d --build, with the gh token, the Odoo key and your git e-mail
+docker compose up -d --build
 ```
 
-Then <http://localhost:8766>. The app listens on this machine only, and its database is reachable by it alone. After a
-restart of the session, run the script again: it puts back the secrets, which do not survive the logout. Without being in
-the `docker` group, the scripts go through `sudo` and ask for your password. Docker's database is its own, empty at first:
-`scripts/docker-restore.sh` copies the one of this machine into it instead of collecting everything again.
+Then <http://localhost:8766>. The app listens on this machine only, and its database is reachable by it alone. Docker's
+database is its own, empty at first: `scripts/docker-restore.sh` copies the one of this machine into it instead of
+collecting everything again.
 
-The container has neither `gh`, nor the keyring, nor your git config: `scripts/docker-up.sh` hands them over.
+The container has neither `gh`, nor the keyring, nor your home git config: the first page asks your trigram when the
+`odoo` clone's git e-mail does not give it, then a passphrase for the vault and the two keys, pasted by hand.
 
-| Secret | Comes from | Kept where | Goes where |
-| --- | --- | --- | --- |
-| GitHub token | `GH_TOKEN=…`, else the one saved in Settings › Connections (keyring), else `gh auth token` | `$XDG_RUNTIME_DIR/squad-dashboard/github_token`: in memory, mode 600, wiped at logout; mounted read-only in `/run/secrets/` of the `app` container alone | `api.github.com`, and `github.com` for the fetch, in a header given to git by its environment, never on a command line |
-| Odoo API key | `ODOO_API_KEY=…`, else the keyring: saved in Settings › Connections, or where the V1 kept it | `$XDG_RUNTIME_DIR/squad-dashboard/odoo_api_key`, mounted the same way | `www.odoo.com` (JSON-2 API), read only |
-| Token or key given in Settings › Connections | you | the vault `/data/secrets.vault` of the `data` volume: AES-256-GCM, its key derived from your passphrase by scrypt and kept in memory only; locked at each restart | before the two others |
+| Secret | Kept where | Goes where |
+| --- | --- | --- |
+| GitHub token | the vault `/data/secrets.vault` of the `data` volume: AES-256-GCM, its key derived from your passphrase by scrypt and kept in memory only | `api.github.com`, and `github.com` for the fetch, in a header given to git by its environment, never on a command line |
+| Odoo API key | the same vault | `www.odoo.com` (JSON-2 API), read only |
 
 They are never in the image, in the container's environment (`docker inspect`), in config.json, in the database, in the
-logs or in the page: the settings only tell whether there is one and where it comes from. `gh auth token` is your CLI's
-token, with all its rights: to bound what the container holds, give it one of its own, `GH_TOKEN=<token>
-scripts/docker-up.sh`, a classic token with `repo` and `read:org`.
+logs or in the page: the settings only tell whether there is one and where it comes from. The vault locks at each restart
+of the container: its passphrase, in Settings › Connections, opens it again. `config.json` lives in the same volume.
 
 ## First launch
 
@@ -200,7 +197,8 @@ tells when a version is out: it is read on GitHub on a click and with each full 
 back: `git checkout <previous tag>`, then `pg_restore --clean` of the backup.
 
 Settings › About also shows the commit the answering server runs and when it started: still the old one after a restart,
-an older server holds the port (`fuser -k 8766/tcp` stops it).
+an older server holds the port (`fuser -k 8766/tcp` stops it). The image holds no git: Docker shows the commit when it is
+given at build, `SD_COMMIT=$(git rev-parse --short HEAD) docker compose up -d --build`, as `scripts/update.sh docker` does.
 
 ## What git holds
 
@@ -228,7 +226,7 @@ Everything runs under Bun, Node is not needed. The database schema is in [docs/d
 | Variable | Default | Role |
 | --- | --- | --- |
 | `DATABASE_URL` | `postgres:///squad_dashboard?host=/var/run/postgresql` | PostgreSQL database |
-| `CONFIG_PATH` | `config.json` at the root | What the dashboard follows |
+| `CONFIG_PATH` | `config.json` at the root (`/data/config.json` in Docker) | What the dashboard follows |
 | `SECRET_STORE` | `keyring` (`file` in Docker) | The system keyring, or the encrypted vault |
 | `RUNTIME` | `bun` (`docker` in Docker) | The update command the page shows |
 | `DATA_DIR` | `~/.local/share/squad-dashboard` (`/data` in Docker) | Encrypted vault |

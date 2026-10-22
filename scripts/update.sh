@@ -35,7 +35,10 @@ fi
 echo "code à $tag"
 
 if [ "$1" = docker ]; then
-  scripts/docker-up.sh
+  # The commit Settings › About shows: the image holds no .git.
+  SD_COMMIT=$(git rev-parse --short HEAD)
+  export SD_COMMIT
+  compose up -d --build
 else
   bun install --frozen-lockfile
   bun run build

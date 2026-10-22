@@ -1,10 +1,14 @@
 import { createQuery } from '@tanstack/svelte-query';
 import { parseResponse } from 'hono/client';
 import { api } from './api.ts';
+import { queryClient } from './live.svelte.ts';
 import { prefs } from './prefs.svelte.ts';
 
 /** What the dashboard follows, chosen on its first page: every page shows the spaces it opens. */
 export const setupQuery = () => createQuery(() => ({ queryKey: ['setup'], queryFn: () => parseResponse(api.setup.$get()) }));
+
+/** The vault or a key changed: the settings and the first page both tell it. */
+export const keysChanged = () => Promise.all(['settings', 'setup'].map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
 
 /** The spaces a choice opens: Squad needs a squad, and stays out of sight while hidden. */
 export function spaces(setup: { follow: string | null; squad: unknown } | undefined, hidden = prefs.hidden) {
@@ -31,6 +35,8 @@ const en = {
     string,
     string
   >,
+  vaultNone:
+    'Docker keeps them in an encrypted file of its volume: choose its passphrase, 12 characters or more. It is asked again after each restart, in Settings › Connections.',
   lookAgain: 'Look again',
   collect: 'Start the first collection',
   start: 'Start',
@@ -59,6 +65,8 @@ const fr: typeof en = {
     github: 'aucun pour l’instant : il faut pour lire les PR et les reviews',
     odoo: 'aucune pour l’instant : facultative, pour les tâches Odoo',
   },
+  vaultNone:
+    'Docker les garde dans un fichier chiffré de son volume : choisir sa phrase de passe, 12 caractères ou plus. Elle est redemandée après chaque redémarrage, dans Réglages › Connexions.',
   lookAgain: 'Regarder à nouveau',
   collect: 'Lancer la première collecte',
   start: 'Commencer',

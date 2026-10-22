@@ -40,6 +40,8 @@ export function settingsRoutes({ settings, secrets, loadConfig, whoami, collecti
       whoami: await whoami(),
       squad: config?.squad ?? (v1.success ? v1.data.squad : undefined) ?? null,
       keys: await settings.keySources(),
+      // In Docker, the first page opens the vault and takes the keys.
+      vault: await secrets.status(),
     };
   };
   return (

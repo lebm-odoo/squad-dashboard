@@ -35,7 +35,8 @@ version's.
   features (Ctrl K).
 - The app is named Dashboard, its logo a D in shades of green; an opening screen once a session, the logo drawing
   itself; the first page shows the logo too.
-- In its own window from the application launcher: `scripts/app.sh install`. In Docker: `scripts/docker-up.sh`.
+- In its own window from the application launcher: `scripts/app.sh install`. In Docker: `docker compose up -d --build`,
+  the keys pasted on the first page.
 - Settings › About tells when a new version is out; `scripts/update.sh` installs it after saving the database.
 
 ## 1.0.1 - 2026-10-10

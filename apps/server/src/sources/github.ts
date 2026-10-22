@@ -2,7 +2,6 @@ import { Octokit } from '@octokit/core';
 import { retry } from '@octokit/plugin-retry';
 import { throttling } from '@octokit/plugin-throttling';
 import Bottleneck from 'bottleneck';
-import { dockerSecret } from '../security/secrets';
 import { Slots } from './git';
 
 // biome-ignore lint/suspicious/noExplicitAny: GraphQL answers are read field by field, as their queries ask.
@@ -166,9 +165,9 @@ export class Github {
   }
 }
 
-/** The token given to the server (a Docker secret, else GH_TOKEN), else the GitHub CLI's when it is installed and logged in. */
+/** The token given to the server (GH_TOKEN), else the GitHub CLI's when it is installed and logged in. */
 export async function ghToken() {
-  const given = (await dockerSecret('github_token')) || process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
+  const given = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
   if (given) return given;
   try {
     const proc = Bun.spawn(['gh', 'auth', 'token'], { stdout: 'pipe', stderr: 'ignore' });

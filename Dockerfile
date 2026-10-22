@@ -26,7 +26,7 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends git openssh-client ca-certificates \
   && rm -rf /var/lib/apt/lists/* \
   && git config --system --add safe.directory '*' \
-  && mkdir -p /data /config \
+  && mkdir -p /data \
   && chown bun:bun /data
 WORKDIR /app
 COPY --from=runtime-deps /app ./
@@ -34,7 +34,7 @@ COPY packages/shared/src packages/shared/src
 COPY apps/server/src apps/server/src
 COPY apps/server/drizzle apps/server/drizzle
 COPY --from=build /app/apps/web/build apps/web/build
-ENV NODE_ENV=production RUNTIME=docker HOST=0.0.0.0 PORT=8766 CONFIG_PATH=/config/config.json DATA_DIR=/data SECRET_STORE=file
+ENV NODE_ENV=production RUNTIME=docker HOST=0.0.0.0 PORT=8766 CONFIG_PATH=/data/config.json DATA_DIR=/data SECRET_STORE=file
 USER bun
 EXPOSE 8766
 HEALTHCHECK --interval=30s --timeout=5s \

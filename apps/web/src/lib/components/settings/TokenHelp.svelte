@@ -5,7 +5,7 @@ import { toast } from 'svelte-sonner';
 import { m } from '#lib/i18n.svelte.ts';
 
 /** How to get a GitHub token or an Odoo key: the command to run, or the page where to make one. */
-let { kind }: { kind: 'github' | 'odoo' } = $props();
+let { kind, docker = false, paste = false }: { kind: 'github' | 'odoo'; docker?: boolean; paste?: boolean } = $props();
 const words = $derived(m().settings.connections.help);
 
 async function copy(command: string) {
@@ -30,17 +30,28 @@ async function copy(command: string) {
 {/snippet}
 
 <div class="grid gap-1.5 text-[13px] text-foreground/80">
-  {#if kind === 'github'}
+  {#if kind === 'github' && docker}
+    <p>{words.github.docker}</p>
+    <div>{@render command('gh auth refresh --scopes read:org')}</div>
+    <div>{@render command('gh auth token')}</div>
+  {:else if kind === 'github'}
     <p>{words.github.gh}</p>
     <div>{@render command('gh auth login --scopes read:org')}</div>
     <p>{words.github.refresh}</p>
     <div>{@render command('gh auth refresh --scopes read:org')}</div>
+  {/if}
+  {#if kind === 'github'}
     <p>
       {words.github.web}
       {@render link('https://github.com/settings/tokens/new?description=Dashboard&scopes=repo,read:org', words.github.webLink)}
+      {#if paste}{words.paste}{/if}
     </p>
     <p class="text-xs text-muted-foreground">{words.github.sso}</p>
   {:else}
-    <p>{words.odoo.steps} {@render link('https://www.odoo.com/odoo', words.odoo.link)}</p>
+    <p>
+      {words.odoo.steps}
+      {@render link('https://www.odoo.com/odoo', words.odoo.link)}
+      {#if paste}{words.paste}{/if}
+    </p>
   {/if}
 </div>

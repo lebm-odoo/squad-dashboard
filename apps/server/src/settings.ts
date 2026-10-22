@@ -10,7 +10,7 @@ import { appMeta } from './db/schema';
 import { type LoginSource, loginReport } from './domain/logins';
 import { answered } from './domain/reviews';
 import { latestRelease, newer, type Release } from './release';
-import { dockerSecret, type SecretStore } from './security/secrets';
+import type { SecretStore } from './security/secrets';
 import type { Clone } from './sources/clones';
 import { Github, ghToken } from './sources/github';
 import { Odoo, squadOdooKey } from './sources/odoo';
@@ -62,16 +62,16 @@ export function settingsPort({
   // The GitHub token and the Odoo key the collection would use, and where each comes from: read here, no network.
   const keys = async () => {
     const secret = (name: string) => secrets.get(name).catch(() => null);
-    const sourceOf = async (vault: string | null, name: string, env: string | undefined, key: string | null): Promise<KeySource> =>
-      vault ? 'vault' : (await dockerSecret(name)) ? 'secret' : env ? 'env' : key ? 'host' : 'none';
+    const sourceOf = (vault: string | null, env: string | undefined, key: string | null): KeySource =>
+      vault ? 'vault' : env ? 'env' : key ? 'host' : 'none';
     const [githubVault, odooVault] = [await secret('github_token'), await secret('odoo_api_key')];
     const token = githubVault ?? (await ghToken());
     const key = odooVault ?? (await squadOdooKey());
     return {
       token,
       key,
-      github: await sourceOf(githubVault, 'github_token', process.env.GH_TOKEN || process.env.GITHUB_TOKEN, token),
-      odoo: await sourceOf(odooVault, 'odoo_api_key', process.env.ODOO_API_KEY, key),
+      github: sourceOf(githubVault, process.env.GH_TOKEN || process.env.GITHUB_TOKEN, token),
+      odoo: sourceOf(odooVault, process.env.ODOO_API_KEY, key),
     };
   };
 

@@ -5,5 +5,5 @@ if docker info >/dev/null 2>&1; then
   compose() { docker compose "$@"; }
 else
   echo "Docker demande les droits root : les commandes passent par sudo" >&2
-  compose() { sudo --preserve-env=SD_EMAIL,SD_COMMIT,SD_PORT,SD_CLONES,SD_DB_PASSWORD,TZ,XDG_RUNTIME_DIR docker compose "$@"; }
+  compose() { sudo --preserve-env=SD_COMMIT,SD_PORT,SD_CLONES,SD_DB_PASSWORD,TZ docker compose "$@"; }
 fi

@@ -1,6 +1,5 @@
 import { decodeHTML } from 'entities';
 import { re } from '../domain/py';
-import { dockerSecret } from '../security/secrets';
 
 export class OdooError extends Error {}
 
@@ -227,12 +226,9 @@ export async function readTasks(
   };
 }
 
-/**
- * The key given to the server (a Docker secret, else ODOO_API_KEY), else the one the V1 kept in the session's keyring: the
- * same user, the same rights.
- */
+/** The key given to the server (ODOO_API_KEY), else the one the V1 kept in the session's keyring: the same user, the same rights. */
 export async function squadOdooKey() {
-  const given = (await dockerSecret('odoo_api_key')) || process.env.ODOO_API_KEY;
+  const given = process.env.ODOO_API_KEY;
   if (given) return given;
   try {
     const proc = Bun.spawn(['secret-tool', 'lookup', 'service', 'squad-dashboard', 'account', 'odoo-api-key'], {

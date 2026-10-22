@@ -64,8 +64,8 @@ export interface DashboardStore {
 }
 
 export type Check = { ok: boolean; detail: string };
-/** Where a key comes from: the vault, a Docker secret, the server's environment, the host's tools (gh, the keyring), nowhere. */
-export type KeySource = 'vault' | 'secret' | 'env' | 'host' | 'none';
+/** Where a key comes from: the vault, the server's environment, the host's tools (gh, the keyring), nowhere. */
+export type KeySource = 'vault' | 'env' | 'host' | 'none';
 export type ConnectionChecks = {
   github: Check & { source: KeySource; login?: string; scopes?: string[]; remaining?: number };
   odoo: Check & { source: KeySource; user?: string };

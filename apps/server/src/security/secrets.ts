@@ -6,12 +6,6 @@ import { derive, kdfParams, newKdf, seal, sealedBox, unseal } from './crypto';
 
 export class SecretError extends Error {}
 
-/** A secret Docker mounted in the container (compose `secrets:`, read-only, out of the environment); null when none. */
-export async function dockerSecret(name: string) {
-  const value = await readFile(`/run/secrets/${name}`, 'utf8').catch(() => '');
-  return value.trim() || null;
-}
-
 export type SecretStatus = { kind: 'keyring' | 'file'; exists: boolean; locked: boolean };
 
 export interface SecretStore {

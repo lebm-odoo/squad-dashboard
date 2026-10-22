@@ -144,6 +144,7 @@ test('asks what to follow on the first opening, before config.json exists, and w
     whoami: 'abcd',
     squad: null,
     keys: { github: 'host', odoo: 'none' },
+    vault: { kind: 'keyring', exists: true, locked: false },
   });
   expect((await put({ follow: 'squad', me: 'abcd', squad: null })).status).toBe(400);
 

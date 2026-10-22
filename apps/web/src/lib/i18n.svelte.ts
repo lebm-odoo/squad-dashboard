@@ -574,7 +574,7 @@ const en = {
       lock: 'Lock',
       githubTitle: 'GitHub token',
       githubSub:
-        'Reads PRs, reviews and the reviews asked of you. Without one saved here: the Docker secret, else GH_TOKEN, else the token of `gh auth login` on this machine. Read-only scopes are enough (repo, read:org).',
+        'Reads PRs, reviews and the reviews asked of you. Without one saved here: GH_TOKEN, else the token of `gh auth login` on this machine. Read-only scopes are enough (repo, read:org).',
       odooTitle: 'Odoo API key',
       odooSub:
         'Reads the tasks of the squad, their stage and state. It only reads. Create one in Odoo: your avatar, My Profile, Account Security, New API Key, with an end date.',
@@ -582,15 +582,16 @@ const en = {
         github: {
           gh: 'With the GitHub CLI, logged in once, the dashboard reads its token on its own:',
           refresh: 'Already logged in without the read:org scope:',
-          web: 'Without the CLI: a classic token with the repo and read:org scopes, pasted in Settings › Connections.',
+          docker: 'Docker does not see the GitHub CLI: paste its token, once it has the read:org scope:',
+          web: 'Without the CLI: a classic token with the repo and read:org scopes.',
           webLink: 'Create it on GitHub',
           sso: 'If GitHub asks, authorize it for the odoo organization (Configure SSO).',
         },
         odoo: {
-          steps:
-            'On www.odoo.com, logged in: your avatar, My Profile, Account Security, New API Key, with an end date; then paste it in Settings › Connections.',
+          steps: 'On www.odoo.com, logged in: your avatar, My Profile, Account Security, New API Key, with an end date.',
           link: 'Open www.odoo.com',
         },
+        paste: 'Then paste it in Settings › Connections.',
         copy: 'Copy',
         copied: 'Copied',
       },
@@ -607,14 +608,12 @@ const en = {
       sources: {
         github: {
           vault: 'token saved here',
-          secret: 'Docker secret',
           env: 'token given to the server (GH_TOKEN)',
           host: 'token of gh auth',
           none: '',
         },
         odoo: {
           vault: 'key saved here',
-          secret: 'Docker secret',
           env: 'key given to the server (ODOO_API_KEY)',
           host: 'key of the V1, in the keyring',
           none: '',
@@ -1230,7 +1229,7 @@ const fr: typeof en = {
       lock: 'Verrouiller',
       githubTitle: 'Jeton GitHub',
       githubSub:
-        'Lit les PR, les reviews et les reviews qu’on te demande. Sans jeton enregistré ici : le secret Docker, sinon GH_TOKEN, sinon le jeton de `gh auth login` sur cette machine. Des scopes en lecture suffisent (repo, read:org).',
+        'Lit les PR, les reviews et les reviews qu’on te demande. Sans jeton enregistré ici : GH_TOKEN, sinon le jeton de `gh auth login` sur cette machine. Des scopes en lecture suffisent (repo, read:org).',
       odooTitle: 'Clé API Odoo',
       odooSub:
         'Lit les tâches du squad, leur étape et leur état. Elle ne fait que lire. La créer dans Odoo : ton avatar, Mon profil, Sécurité du compte, Nouvelle clé API, avec une date de fin.',
@@ -1238,15 +1237,16 @@ const fr: typeof en = {
         github: {
           gh: 'Avec le CLI GitHub, connecté une fois, le tableau de bord lit son jeton seul :',
           refresh: 'Déjà connecté, sans le scope read:org :',
-          web: 'Sans le CLI : un jeton classique avec les scopes repo et read:org, collé dans Réglages › Connexions.',
+          docker: 'Docker ne voit pas le CLI GitHub : coller son jeton, une fois qu’il a le scope read:org :',
+          web: 'Sans le CLI : un jeton classique avec les scopes repo et read:org.',
           webLink: 'Le créer sur GitHub',
           sso: 'Si GitHub le demande, l’autoriser pour l’organisation odoo (Configure SSO).',
         },
         odoo: {
-          steps:
-            'Sur www.odoo.com, connecté : ton avatar, Mon profil, Sécurité du compte, Nouvelle clé API, avec une date de fin ; puis la coller dans Réglages › Connexions.',
+          steps: 'Sur www.odoo.com, connecté : ton avatar, Mon profil, Sécurité du compte, Nouvelle clé API, avec une date de fin.',
           link: 'Ouvrir www.odoo.com',
         },
+        paste: 'À coller ensuite dans Réglages › Connexions.',
         copy: 'Copier',
         copied: 'Copié',
       },
@@ -1263,14 +1263,12 @@ const fr: typeof en = {
       sources: {
         github: {
           vault: 'jeton enregistré ici',
-          secret: 'secret Docker',
           env: 'jeton donné au serveur (GH_TOKEN)',
           host: 'jeton de gh auth',
           none: '',
         },
         odoo: {
           vault: 'clé enregistrée ici',
-          secret: 'secret Docker',
           env: 'clé donnée au serveur (ODOO_API_KEY)',
           host: 'clé de la V1, dans le trousseau',
           none: '',

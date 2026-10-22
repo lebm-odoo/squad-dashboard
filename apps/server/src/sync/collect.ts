@@ -136,14 +136,19 @@ export class Collection {
           pending: { prs: 0, rplus: 0 },
         }
       : null;
+    // Docker's vault stays locked after a restart, until its passphrase is given again.
+    const missing = async (what: string) => {
+      const { exists, locked } = await secrets.status();
+      return new Error(exists && locked ? 'coffre verrouillé : le déverrouiller dans Réglages › Connexions' : what);
+    };
     const github = (part: (ctx: GithubContext) => Promise<unknown>, source = 'github') =>
       this.attempt(source, async (step) => {
-        if (!context) throw new Error('aucun jeton GitHub : le donner dans les réglages, ou `gh auth login` sur cette machine');
+        if (!context) throw await missing('aucun jeton GitHub : le donner dans les réglages, ou `gh auth login` sur cette machine');
         await part({ ...context, step });
       });
     const tasks = () =>
       this.attempt('odoo', async (step) => {
-        if (!odooKey) throw new Error('aucune clé API Odoo : la donner dans les réglages');
+        if (!odooKey) throw await missing('aucune clé API Odoo : la donner dans les réglages');
         await syncTasks(db, new Odoo(odooKey), { squad: people, lead, now, step });
       });
     const derive = () =>
