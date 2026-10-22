@@ -9,7 +9,7 @@ const stored = (() => {
 })();
 
 export const i18n = $state<{ locale: Locale }>({
-  locale: stored === 'en' || stored === 'fr' ? stored : navigator.language.startsWith('fr') ? 'fr' : 'en',
+  locale: stored === 'fr' ? 'fr' : 'en',
 });
 
 export function setLocale(locale: Locale) {
@@ -25,6 +25,7 @@ export function setLocale(locale: Locale) {
 const en = {
   intl: 'en-GB',
   brand: 'Squad Dashboard',
+  tagline: 'Me first, then my squad',
   theme: 'Light / dark theme',
   update: 'Update',
   updateTitle: 'git fetch, runbot, mergebot, GitHub and Odoo: Me first, then the squad',
@@ -657,6 +658,7 @@ const en = {
 const fr: typeof en = {
   intl: 'fr-FR',
   brand: 'Squad Dashboard',
+  tagline: 'Moi d’abord, puis mon squad',
   theme: 'Thème clair / sombre',
   update: 'Mettre à jour',
   updateTitle: 'git fetch, runbot, mergebot, GitHub et Odoo : Moi d’abord, puis le squad',

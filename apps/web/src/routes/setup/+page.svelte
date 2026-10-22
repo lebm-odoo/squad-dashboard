@@ -7,13 +7,16 @@ import { parseResponse } from 'hono/client';
 import { slide } from 'svelte/transition';
 import { toast } from 'svelte-sonner';
 import { api, messageOf } from '#lib/api.ts';
+import Seg from '#lib/components/Seg.svelte';
+import Mark from '#lib/components/shell/Mark.svelte';
 import { Button } from '#lib/components/ui/button/index.ts';
 import { Checkbox } from '#lib/components/ui/checkbox/index.ts';
 import { Input } from '#lib/components/ui/input/index.ts';
 import { Label } from '#lib/components/ui/label/index.ts';
-import { tr } from '#lib/i18n.svelte.ts';
+import { i18n, type Locale, m, setLocale, tr } from '#lib/i18n.svelte.ts';
 import { collect, queryClient } from '#lib/live.svelte.ts';
 import { setupQuery, words } from '#lib/setup.svelte.ts';
+import { splash } from '#lib/splash.svelte.ts';
 import { goto } from '$app/navigation';
 
 const setup = setupQuery();
@@ -75,13 +78,20 @@ async function start() {
 
 <div class="flex min-h-svh items-start justify-center bg-muted/40 px-4 py-10 sm:items-center">
   <div class="w-full max-w-3xl">
-    <div class="mb-6 flex items-center gap-3">
-      <span class="flex size-10 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">SD</span>
-      <div>
-        <p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">{w.welcome}</p>
-        <h1 class="text-2xl font-semibold tracking-tight">{w.title}</h1>
+    <div class="mb-8 flex h-12 items-center justify-between gap-4">
+      <!-- Mounted once the opening screen is gone: its entrance plays in sight. -->
+      {#if !splash.open}
+        <div class="flex items-center gap-3">
+          <Mark class="size-12" />
+          <span class="brand bg-linear-to-r from-brand to-brand-2 bg-clip-text text-2xl font-bold tracking-tight text-transparent">{m().brand}</span>
+        </div>
+      {/if}
+      <div class="ms-auto">
+        <Seg options={[['en', 'English'], ['fr', 'Français']]} value={i18n.locale} label={w.language} onchange={(locale) => setLocale(locale as Locale)} />
       </div>
     </div>
+    <p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">{w.welcome}</p>
+    <h1 class="mb-3 text-2xl font-semibold tracking-tight">{w.title}</h1>
     <p class="mb-5 text-sm text-muted-foreground">{w.sub}</p>
 
     {#if setup.isError}
@@ -135,3 +145,20 @@ async function start() {
     {/if}
   </div>
 </div>
+
+<style>
+  .brand {
+    animation: rise 0.5s 0.35s ease-out both;
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateX(-8px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .brand {
+      animation: none;
+    }
+  }
+</style>

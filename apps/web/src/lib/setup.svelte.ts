@@ -13,6 +13,7 @@ export function spaces(setup: { follow: string | null; squad: unknown } | undefi
 
 const en = {
   welcome: 'Welcome',
+  language: 'Language',
   title: 'What do you want to follow?',
   sub: 'Me comes first: what waits for you, your work, your reviews, your tasks, and the work of others they touch. Your squad can join it; the settings change this choice at any time. The first collection reads two years of history: it takes a few minutes.',
   follows: {
@@ -33,6 +34,7 @@ const en = {
 
 const fr: typeof en = {
   welcome: 'Bienvenue',
+  language: 'Langue',
   title: 'Que veux-tu suivre ?',
   sub: 'Moi d’abord : ce qui t’attend, ton travail, tes reviews, tes tâches, et le travail des autres qu’ils touchent. Ton squad peut s’y ajouter ; les réglages changent ce choix quand tu veux. La première collecte lit deux ans d’historique : elle prend quelques minutes.',
   follows: {

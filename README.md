@@ -94,7 +94,8 @@ The first page asks what the dashboard follows:
 - **Me and my squad**: me first, plus the work, journeys and reviews of my squad (its lead and members).
 
 Your trigram comes from your git e-mail, the squad from the config.json of the V1 when there is one. The choice goes to
-config.json (created if missing); Settings › Me › Change asks again.
+config.json (created if missing); Settings › Me › Change asks again. The page is in English; this first page and Settings ›
+Display switch it to French.
 
 ## Coming from the V1
 

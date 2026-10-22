@@ -31,7 +31,9 @@ version's.
 - A reviewer outside the squad is named by their trigram, read from the r+ they gave, rather than by their GitHub login.
 - Settings: who I am and my squad, the GitHub logins and the months of arrival, the connections, the collection, the
   display, the data and the version.
-- French and English, light and dark theme, a search of pages, people and features (Ctrl K).
+- English by default, French from the first page or the settings; light and dark theme; a search of pages, people and
+  features (Ctrl K).
+- An opening screen once a session, its logo drawing itself; the first page shows the logo too.
 - In its own window from the application launcher: `scripts/app.sh install`. In Docker: `scripts/docker-up.sh`.
 - Settings › About tells when a new version is out; `scripts/update.sh` installs it after saving the database.
 

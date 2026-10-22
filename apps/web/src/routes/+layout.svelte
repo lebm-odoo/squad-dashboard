@@ -5,6 +5,7 @@ import { ModeWatcher } from 'mode-watcher';
 import { onMount } from 'svelte';
 import favicon from '#lib/assets/favicon.svg';
 import Shell from '#lib/components/shell/Shell.svelte';
+import Splash from '#lib/components/shell/Splash.svelte';
 import Tip from '#lib/components/Tip.svelte';
 import { Toaster } from '#lib/components/ui/sonner/index.ts';
 import { i18n, m } from '#lib/i18n.svelte.ts';
@@ -41,4 +42,5 @@ onMount(() => {
   {:else}
     <Shell>{@render children()}</Shell>
   {/if}
+  <Splash />
 </QueryClientProvider>
