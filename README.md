@@ -104,7 +104,9 @@ The container has neither `gh`, nor the keyring, nor your home git config: the f
 
 They are never in the image, in the container's environment (`docker inspect`), in config.json, in the database, in the
 logs or in the page: the settings only tell whether there is one and where it comes from. The vault locks at each restart
-of the container: its passphrase, in Settings › Connections, opens it again. `config.json` lives in the same volume.
+of the container: its passphrase, in Settings › Connections, opens it again. Forgotten, nothing can open it: « Passphrase
+forgotten? » erases the vault, then a new passphrase and new keys (revoke the old ones). `config.json` lives in the same
+volume.
 
 ## First launch
 

@@ -92,6 +92,9 @@ test('refuses a form posted from another site', async () => {
     headers: { ...local, origin: 'http://evil.example', 'content-type': 'application/x-www-form-urlencoded' },
   });
   expect(res.status).toBe(403);
+  // Nor a bodiless one, which a page of another site sends without asking.
+  const reset = await app().request('/api/secrets/reset', { method: 'POST', headers: { ...local, origin: 'http://evil.example' } });
+  expect(reset.status).toBe(403);
 });
 
 test('opens a web link in the default browser, when the server has one', async () => {
@@ -116,8 +119,9 @@ test('the vault routes answer only with the file store', async () => {
   expect(res.status).toBe(400);
 });
 
-test('creates, locks and unlocks the vault', async () => {
-  const server = app({ secrets: new FileStore(join(await mkdtemp(join(tmpdir(), 'sd-app-')), 'secrets.vault')) });
+test('creates, locks, unlocks and erases the vault', async () => {
+  const vault = new FileStore(join(await mkdtemp(join(tmpdir(), 'sd-app-')), 'secrets.vault'));
+  const server = app({ secrets: vault });
   expect(await (await server.request('/api/secrets/create', json({ passphrase: 'correct horse battery staple' }))).json()).toEqual({
     kind: 'file',
     exists: true,
@@ -128,6 +132,13 @@ test('creates, locks and unlocks the vault', async () => {
   expect(await (await server.request('/api/secrets/unlock', json({ passphrase: 'correct horse battery staple' }))).json()).toMatchObject({
     locked: false,
   });
+  await vault.set('github_token', 'ghp_old');
+
+  // Passphrase forgotten: the vault is erased, a new one starts empty.
+  await server.request('/api/secrets/lock', json({}));
+  expect(await (await server.request('/api/secrets/reset', json({}))).json()).toMatchObject({ exists: false, locked: true });
+  await server.request('/api/secrets/create', json({ passphrase: 'another long passphrase' }));
+  expect(await vault.get('github_token')).toBeNull();
 }, 30_000);
 
 test('asks what to follow on the first opening, before config.json exists, and writes it', async () => {

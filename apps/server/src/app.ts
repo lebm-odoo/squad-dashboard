@@ -68,6 +68,10 @@ export function createApp(deps: AppDeps) {
       vault().lock();
       return c.json(await deps.secrets.status());
     })
+    .post('/secrets/reset', async (c) => {
+      await vault().reset();
+      return c.json(await deps.secrets.status());
+    })
     .get('/collect', (c) => c.json(deps.collection.state))
     .post('/collect', zValidator('json', z.object({ scope: z.enum(collectScopes) })), (c) => {
       const { scope } = c.req.valid('json');

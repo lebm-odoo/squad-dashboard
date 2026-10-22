@@ -572,6 +572,11 @@ const en = {
       create: 'Create',
       unlock: 'Unlock',
       lock: 'Lock',
+      forgot: 'Passphrase forgotten?',
+      resetSure:
+        'Nobody can open the vault without it, not even the dashboard: erase it, choose a new passphrase and paste the keys again. Revoke the old ones on GitHub and Odoo.',
+      reset: 'Erase the vault',
+      cancel: 'Cancel',
       githubTitle: 'GitHub token',
       githubSub:
         'Reads PRs, reviews and the reviews asked of you. Without one saved here: GH_TOKEN, else the token of `gh auth login` on this machine. Read-only scopes are enough (repo, read:org).',
@@ -1227,6 +1232,11 @@ const fr: typeof en = {
       create: 'Créer',
       unlock: 'Déverrouiller',
       lock: 'Verrouiller',
+      forgot: 'Phrase de passe oubliée ?',
+      resetSure:
+        'Personne ne peut ouvrir le coffre sans elle, pas même le tableau de bord : l’effacer, choisir une nouvelle phrase de passe et coller à nouveau les clés. Révoquer les anciennes sur GitHub et Odoo.',
+      reset: 'Effacer le coffre',
+      cancel: 'Annuler',
       githubTitle: 'Jeton GitHub',
       githubSub:
         'Lit les PR, les reviews et les reviews qu’on te demande. Sans jeton enregistré ici : GH_TOKEN, sinon le jeton de `gh auth login` sur cette machine. Des scopes en lecture suffisent (repo, read:org).',

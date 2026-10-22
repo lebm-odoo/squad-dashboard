@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { access, chmod, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { access, chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { z } from 'zod';
 import { derive, kdfParams, newKdf, seal, sealedBox, unseal } from './crypto';
@@ -65,6 +65,12 @@ export class FileStore implements SecretStore {
     this.#key?.fill(0);
     this.#key = null;
     this.#entries = {};
+  }
+
+  /** A forgotten passphrase: the vault goes with what it holds, nobody can open it anyway. */
+  async reset() {
+    this.lock();
+    await rm(this.path, { force: true });
   }
 
   async get(name: string) {
