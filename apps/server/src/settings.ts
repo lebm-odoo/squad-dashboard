@@ -2,7 +2,7 @@ import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { type CollectSettings, collectSettings, type DashboardConfig, type Todo, todos } from '@sd/shared';
 import { eq, sql } from 'drizzle-orm';
-import type { ConnectionChecks, DashboardStore, SettingsPort, UpdateState } from './api/store';
+import type { ConnectionChecks, DashboardStore, KeySource, SettingsPort, UpdateState } from './api/store';
 import { followed, followedSquad, saveConfig, squadOf } from './config';
 import type { Database } from './db/client';
 import { loadDeducedLogins } from './db/github';
@@ -57,6 +57,22 @@ export function settingsPort({
     } catch (error) {
       return { ok: false, detail: (error as Error).message };
     }
+  };
+
+  // The GitHub token and the Odoo key the collection would use, and where each comes from: read here, no network.
+  const keys = async () => {
+    const secret = (name: string) => secrets.get(name).catch(() => null);
+    const sourceOf = async (vault: string | null, name: string, env: string | undefined, key: string | null): Promise<KeySource> =>
+      vault ? 'vault' : (await dockerSecret(name)) ? 'secret' : env ? 'env' : key ? 'host' : 'none';
+    const [githubVault, odooVault] = [await secret('github_token'), await secret('odoo_api_key')];
+    const token = githubVault ?? (await ghToken());
+    const key = odooVault ?? (await squadOdooKey());
+    return {
+      token,
+      key,
+      github: await sourceOf(githubVault, 'github_token', process.env.GH_TOKEN || process.env.GITHUB_TOKEN, token),
+      odoo: await sourceOf(odooVault, 'odoo_api_key', process.env.ODOO_API_KEY, key),
+    };
   };
 
   const updateState = (checked?: { latest: Release | null; at: number; error: string | null }): UpdateState => ({
@@ -135,13 +151,13 @@ export function settingsPort({
       return checked;
     },
 
+    async keySources() {
+      const { github, odoo } = await keys();
+      return { github, odoo };
+    },
+
     async check() {
-      const secret = (name: string) => secrets.get(name).catch(() => null);
-      const sourceOf = async (vault: string | null, name: string, env: string | undefined, key: string | null) =>
-        vault ? 'vault' : (await dockerSecret(name)) ? 'secret' : env ? 'env' : key ? 'host' : 'none';
-      const vault = await secret('github_token');
-      const token = vault ?? (await ghToken());
-      const tokenSource = await sourceOf(vault, 'github_token', process.env.GH_TOKEN || process.env.GITHUB_TOKEN, token);
+      const { token, key, github: tokenSource, odoo: keySource } = await keys();
       let github: ConnectionChecks['github'] = { ok: false, detail: 'aucun jeton', source: 'none' };
       if (token) {
         const headers = { authorization: `bearer ${token}`, 'user-agent': `squad-dashboard/${release.version}` };
@@ -167,9 +183,6 @@ export function settingsPort({
           github = { ok: false, detail: (error as Error).message, source: tokenSource };
         }
       }
-      const vaultKey = await secret('odoo_api_key');
-      const key = vaultKey ?? (await squadOdooKey());
-      const keySource = await sourceOf(vaultKey, 'odoo_api_key', process.env.ODOO_API_KEY, key);
       let odoo: ConnectionChecks['odoo'] = { ok: false, detail: 'aucune clé', source: 'none' };
       if (key) {
         try {

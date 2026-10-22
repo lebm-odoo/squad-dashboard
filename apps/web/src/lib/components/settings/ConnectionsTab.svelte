@@ -9,6 +9,7 @@ import { m } from '#lib/i18n.svelte.ts';
 import { queryClient } from '#lib/live.svelte.ts';
 import SecretField from './SecretField.svelte';
 import Section from './Section.svelte';
+import TokenHelp from './TokenHelp.svelte';
 import type { Checks, Settings } from './types.ts';
 
 let { settings, checks = $bindable() }: { settings: Settings; checks: Checks | null } = $props();
@@ -66,8 +67,12 @@ async function check() {
       </div>
     {/if}
   </Section>
-  <SecretField name="github_token" title={words.githubTitle} sub={words.githubSub} present={vault.github_token} />
-  <SecretField name="odoo_api_key" title={words.odooTitle} sub={words.odooSub} present={vault.odoo_api_key} />
+  <SecretField name="github_token" title={words.githubTitle} sub={words.githubSub} present={vault.github_token}>
+    {#snippet help()}<TokenHelp kind="github" />{/snippet}
+  </SecretField>
+  <SecretField name="odoo_api_key" title={words.odooTitle} sub={words.odooSub} present={vault.odoo_api_key}>
+    {#snippet help()}<TokenHelp kind="odoo" />{/snippet}
+  </SecretField>
   <Section title={words.check} sub={words.checkSub}>
     {#snippet action()}
       <Button size="sm" disabled={busy} onclick={check}>{busy ? words.checking : words.check}</Button>

@@ -94,6 +94,8 @@ export interface SettingsPort {
     patch: Partial<Pick<DashboardConfig, 'me' | 'follow' | 'github_logins' | 'arrivals'>> & { squad?: DashboardConfig['squad'] | null },
   ): Promise<DashboardConfig>;
   loginReport(): Promise<LoginRow[]>;
+  /** Where the GitHub token and the Odoo key would come from, read without any network. */
+  keySources(): Promise<{ github: KeySource; odoo: KeySource }>;
   todos(): Promise<Todo[]>;
   saveTodos(todos: Todo[]): Promise<Todo[]>;
   collectSettings(): Promise<CollectSettings>;

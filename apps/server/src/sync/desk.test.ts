@@ -17,8 +17,8 @@ describe.skipIf(!testDatabaseUrl)('my desk', () => {
         const iso = (at: number) => new Date(at * 1000).toISOString();
         await insertRows(db, dashboardFeature, [
           {
-            name: 'master-a-lebm',
-            owner: 'lebm',
+            name: 'master-a-anne',
+            owner: 'anne',
             archived: false,
             data: {
               prs: [1, 2, 4].map((number) => ({ repo: 'odoo/odoo', number })),
@@ -30,13 +30,13 @@ describe.skipIf(!testDatabaseUrl)('my desk', () => {
           repo: 'odoo/odoo',
           number,
           state,
-          label: 'odoo-dev:master-a-lebm',
+          label: 'odoo-dev:master-a-anne',
           fetched,
         });
         await saveMergebot(db, [page(1, 'open', now - 600), page(2, 'open', now - 2 * 3600), page(4, 'merged', now - 86400)]);
         const github = (fetched: number): PrDetail => ({
           title: '[IMP] hr: a thing',
-          head_ref: 'master-a-lebm',
+          head_ref: 'master-a-anne',
           head_owner: 'odoo-dev',
           merged_at: null,
           tasks: [],
@@ -44,7 +44,7 @@ describe.skipIf(!testDatabaseUrl)('my desk', () => {
           desc_words: 0,
           state: 'OPEN',
           draft: false,
-          author: 'lebm-odoo',
+          author: 'anne-odoo',
           created_at: now - 86400,
           closed_at: null,
           additions: 1,
@@ -74,7 +74,7 @@ describe.skipIf(!testDatabaseUrl)('my desk', () => {
             details.push(Number(number));
             return {
               title: '[IMP] hr: a thing',
-              headRefName: 'master-a-lebm',
+              headRefName: 'master-a-anne',
               headRepositoryOwner: { login: 'odoo-dev' },
               mergedAt: null,
               bodyText: '',
@@ -85,7 +85,7 @@ describe.skipIf(!testDatabaseUrl)('my desk', () => {
               additions: 1,
               deletions: 0,
               changedFiles: 1,
-              author: { login: 'lebm-odoo' },
+              author: { login: 'anne-odoo' },
               reviews: { nodes: [] },
               comments: { totalCount: 0 },
               timelineItems: { nodes: [] },
@@ -100,7 +100,7 @@ describe.skipIf(!testDatabaseUrl)('my desk', () => {
           return new Response('', { status: 404 });
         }) as unknown as typeof fetch;
         const gh = new Github('token', { fetch: graphql, searchPause: 0, retryBase: 1 });
-        const ctx = { db, gh, clones: [], people: ['lebm'], me: 'lebm', lead: 'lebm', forced: {}, now, sinceDays: 30 };
+        const ctx = { db, gh, clones: [], people: ['anne'], me: 'anne', lead: 'anne', forced: {}, now, sinceDays: 30 };
         const desk = await syncDesk(ctx, mergebot);
         expect(details.sort()).toEqual([1, 3]);
         expect(pages.sort()).toEqual([1, 2, 3].map((number) => `https://mergebot.odoo.com/odoo/odoo/pull/${number}`));

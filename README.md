@@ -23,15 +23,37 @@ work and your reviews first, then, when you follow your squad, what each of its 
 A to-do is a comment about a reference: a feature, a PR, a task or the journey of a person. The **+** of any of them adds
 one; what has an open to-do is marked everywhere.
 
+## Stack
+
+- **Server**: [Bun](https://bun.sh) 1.4 running TypeScript, [Hono](https://hono.dev) for the HTTP API and the live progress
+  (server-sent events), [Drizzle](https://orm.drizzle.team) over PostgreSQL, Zod to check what comes in.
+- **Page**: [Svelte 5](https://svelte.dev) with SvelteKit as a single-page app the server hands out, Tailwind 4 and
+  shadcn-svelte components, TanStack Query and Table, LayerChart for the charts.
+- **Sources**, read on a click: the local `odoo`, `enterprise` and `upgrade` clones (git), GitHub's GraphQL API, runbot and
+  mergebot pages, and Odoo's JSON-2 API (read only).
+- **Data**: one PostgreSQL database, `squad_dashboard`, holding what was read and the dashboard computed from it;
+  `config.json` for who you are and your squad; the secrets in the system keyring, or in an encrypted vault in Docker.
+- One repository of Bun workspaces: `apps/server`, `apps/web`, `packages/shared` (the config and API types both use).
+
 ## Requirements
 
 - [Bun](https://bun.sh) 1.4 and a local PostgreSQL reachable through its socket, or Docker with Compose.
 - The `odoo`, `enterprise` and `upgrade` clones in one folder, by default the parent of this one.
 - The `dev` remote (odoo-dev) in `odoo` and `enterprise`, `origin` in `upgrade`.
 - `git config user.email` set to `<trigram>@odoo.com` in the `odoo` clone: it tells who you are.
-- [`gh`](https://cli.github.com/) logged in (`gh auth login`), or a token given in Settings › Connections. With the
-  `read:org` scope, the dashboard also knows your GitHub teams and their members.
-- Optional: an API key of www.odoo.com, to read the tasks of the squad (see [Odoo](#odoo)).
+- A GitHub token with the `read:org` scope, an Odoo API key optionally: see [Tokens](#tokens).
+
+### Tokens
+
+The first page and Settings › Connections tell which are found, and how to get them.
+
+- **GitHub**, needed. With the [GitHub CLI](https://cli.github.com/), the dashboard reads its token on its own:
+  `gh auth login --scopes read:org`, or `gh auth refresh --scopes read:org` when already logged in. Without it,
+  [create a classic token](https://github.com/settings/tokens/new?description=Dashboard&scopes=repo,read:org) with the
+  `repo` and `read:org` scopes, authorize it for the odoo organization if GitHub asks (Configure SSO), and paste it in
+  Settings › Connections.
+- **Odoo**, optional, for the tasks of the squad: on [www.odoo.com](https://www.odoo.com/odoo), logged in, your avatar,
+  **My Profile**, **Account Security**, **New API Key**, with an end date; paste it in Settings › Connections.
 
 ## Run
 
@@ -78,8 +100,8 @@ The container has neither `gh`, nor the keyring, nor your git config: `scripts/d
 
 | Secret | Comes from | Kept where | Goes where |
 | --- | --- | --- | --- |
-| GitHub token | `gh auth token`, or `GH_TOKEN=…` | `$XDG_RUNTIME_DIR/squad-dashboard/github_token`: in memory, mode 600, wiped at logout; mounted read-only in `/run/secrets/` of the `app` container alone | `api.github.com`, and `github.com` for the fetch, in a header given to git by its environment, never on a command line |
-| Odoo API key | the keyring (`secret-tool`, where the V1 kept it), or `ODOO_API_KEY=…` | `$XDG_RUNTIME_DIR/squad-dashboard/odoo_api_key`, mounted the same way | `www.odoo.com` (JSON-2 API), read only |
+| GitHub token | `GH_TOKEN=…`, else the one saved in Settings › Connections (keyring), else `gh auth token` | `$XDG_RUNTIME_DIR/squad-dashboard/github_token`: in memory, mode 600, wiped at logout; mounted read-only in `/run/secrets/` of the `app` container alone | `api.github.com`, and `github.com` for the fetch, in a header given to git by its environment, never on a command line |
+| Odoo API key | `ODOO_API_KEY=…`, else the keyring: saved in Settings › Connections, or where the V1 kept it | `$XDG_RUNTIME_DIR/squad-dashboard/odoo_api_key`, mounted the same way | `www.odoo.com` (JSON-2 API), read only |
 | Token or key given in Settings › Connections | you | the vault `/data/secrets.vault` of the `data` volume: AES-256-GCM, its key derived from your passphrase by scrypt and kept in memory only; locked at each restart | before the two others |
 
 They are never in the image, in the container's environment (`docker inspect`), in config.json, in the database, in the
@@ -179,6 +201,12 @@ back: `git checkout <previous tag>`, then `pg_restore --clean` of the backup.
 
 Settings › About also shows the commit the answering server runs and when it started: still the old one after a restart,
 an older server holds the port (`fuser -k 8766/tcp` stops it).
+
+## What git holds
+
+The code, the scripts and `config.example.json`, nothing else: `config.json`, the V1's `history.json`, `cache.json` and
+`todos.json`, `data/`, `backups/`, `.env` and the built page stay on this machine (`.gitignore`), the database and the
+secrets live outside the folder. On another machine: clone, follow [Run](#run), and the first page writes the config.
 
 ## Versions
 

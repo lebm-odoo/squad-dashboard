@@ -15,3 +15,4 @@ data.js
 todos.json
 *.tmp
 backups
+odoo-explore.json

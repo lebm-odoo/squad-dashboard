@@ -9,7 +9,7 @@ const closed = (number: number, fetched: number): [string, PrDetail] => [
   `odoo/enterprise#${number}`,
   {
     title: '[FIX] hr_payroll: a fix',
-    head_ref: `master-fix-arpi-${number}`,
+    head_ref: `master-fix-eric-${number}`,
     head_owner: 'odoo-dev',
     merged_at: null,
     tasks: [],
@@ -17,7 +17,7 @@ const closed = (number: number, fetched: number): [string, PrDetail] => [
     desc_words: 0,
     state: 'CLOSED',
     draft: false,
-    author: 'arpi-odoo',
+    author: 'eric-odoo',
     created_at: 1000,
     closed_at: fetched - 10,
     additions: 1,
@@ -48,10 +48,10 @@ describe.skipIf(!testDatabaseUrl)('the PRs the dashboard is computed from', () =
         await savePullRequests(db, new Map([closed(1, 3000), closed(2, 1500)]));
         const { mergebot } = await loadDashboardInput(db, {
           repos: [],
-          names: new Set(['arpi']),
-          squad: new Set(['lebm']),
+          names: new Set(['eric']),
+          squad: new Set(['anne']),
           related: [],
-          me: 'lebm',
+          me: 'anne',
           forced: {},
           now: 4000,
           sinceDays: 30,
@@ -73,10 +73,10 @@ describe.skipIf(!testDatabaseUrl)('the PRs the dashboard is computed from', () =
         await savePullRequests(db, new Map([[key, { ...pr, state: 'OPEN', closed_at: null }]]));
         const { mergebot } = await loadDashboardInput(db, {
           repos: [],
-          names: new Set(['arpi']),
-          squad: new Set(['lebm']),
+          names: new Set(['eric']),
+          squad: new Set(['anne']),
           related: [],
-          me: 'lebm',
+          me: 'anne',
           forced: {},
           now: 4000,
           sinceDays: 30,

@@ -578,6 +578,22 @@ const en = {
       odooTitle: 'Odoo API key',
       odooSub:
         'Reads the tasks of the squad, their stage and state. It only reads. Create one in Odoo: your avatar, My Profile, Account Security, New API Key, with an end date.',
+      help: {
+        github: {
+          gh: 'With the GitHub CLI, logged in once, the dashboard reads its token on its own:',
+          refresh: 'Already logged in without the read:org scope:',
+          web: 'Without the CLI: a classic token with the repo and read:org scopes, pasted in Settings › Connections.',
+          webLink: 'Create it on GitHub',
+          sso: 'If GitHub asks, authorize it for the odoo organization (Configure SSO).',
+        },
+        odoo: {
+          steps:
+            'On www.odoo.com, logged in: your avatar, My Profile, Account Security, New API Key, with an end date; then paste it in Settings › Connections.',
+          link: 'Open www.odoo.com',
+        },
+        copy: 'Copy',
+        copied: 'Copied',
+      },
       present: 'A value is saved.',
       absent: 'Nothing saved.',
       lockedValue: 'The vault is locked: unlock it to tell.',
@@ -1218,6 +1234,22 @@ const fr: typeof en = {
       odooTitle: 'Clé API Odoo',
       odooSub:
         'Lit les tâches du squad, leur étape et leur état. Elle ne fait que lire. La créer dans Odoo : ton avatar, Mon profil, Sécurité du compte, Nouvelle clé API, avec une date de fin.',
+      help: {
+        github: {
+          gh: 'Avec le CLI GitHub, connecté une fois, le tableau de bord lit son jeton seul :',
+          refresh: 'Déjà connecté, sans le scope read:org :',
+          web: 'Sans le CLI : un jeton classique avec les scopes repo et read:org, collé dans Réglages › Connexions.',
+          webLink: 'Le créer sur GitHub',
+          sso: 'Si GitHub le demande, l’autoriser pour l’organisation odoo (Configure SSO).',
+        },
+        odoo: {
+          steps:
+            'Sur www.odoo.com, connecté : ton avatar, Mon profil, Sécurité du compte, Nouvelle clé API, avec une date de fin ; puis la coller dans Réglages › Connexions.',
+          link: 'Ouvrir www.odoo.com',
+        },
+        copy: 'Copier',
+        copied: 'Copié',
+      },
       present: 'Une valeur est enregistrée.',
       absent: 'Rien d’enregistré.',
       lockedValue: 'Le coffre est verrouillé : le déverrouiller pour le savoir.',

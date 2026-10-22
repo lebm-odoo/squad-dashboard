@@ -1,6 +1,6 @@
 #!/bin/sh
-# Starts the dashboard in Docker with what the container cannot reach by itself: this machine's GitHub token (gh) and the
-# Odoo key the V1 kept (keyring), as Docker secrets, and the git e-mail that tells who you are.
+# Starts the dashboard in Docker with what the container cannot reach by itself: this machine's GitHub token and Odoo key,
+# as Docker secrets, and the git e-mail that tells who you are.
 set -e
 cd "$(dirname "$0")/.."
 . scripts/docker.sh
@@ -14,8 +14,10 @@ dir="$XDG_RUNTIME_DIR/squad-dashboard"
 umask 077
 mkdir -p "$dir"
 # Written in place: a running container sees a new token without being recreated.
-printf %s "${GH_TOKEN:-$(gh auth token 2>/dev/null || true)}" > "$dir/github_token"
-printf %s "${ODOO_API_KEY:-$(secret-tool lookup service squad-dashboard account odoo-api-key 2>/dev/null || true)}" > "$dir/odoo_api_key"
+# Given here, else saved in Settings › Connections (the keyring), else gh's token or the key the V1 kept.
+keyring() { secret-tool lookup service squad-dashboard account "$1" 2>/dev/null; }
+printf %s "${GH_TOKEN:-$(keyring github_token || gh auth token 2>/dev/null || true)}" > "$dir/github_token"
+printf %s "${ODOO_API_KEY:-$(keyring odoo_api_key || keyring odoo-api-key || true)}" > "$dir/odoo_api_key"
 [ -s "$dir/github_token" ] || echo "pas de jeton GitHub : gh auth login, ou GH_TOKEN=… $0" >&2
 [ -s "$dir/odoo_api_key" ] || echo "pas de clé Odoo : ODOO_API_KEY=… $0, ou la donner dans Réglages › Connexions" >&2
 unset GH_TOKEN ODOO_API_KEY

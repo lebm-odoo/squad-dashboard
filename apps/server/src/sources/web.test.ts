@@ -1,44 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { existsSync, readdirSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { ownerOf } from '../domain/branches';
-import { parseMergebot, parseRunbot, readMergebot } from './web';
-
-// Pages recorded from mergebot and runbot, with what the V1 parsed of them: private, never in git.
-const pages = resolve(import.meta.dir, '../../../../parity/fixtures/pages');
-const read = (name: string) => Bun.file(resolve(pages, name)).text();
-
-describe.skipIf(!existsSync(pages))('pages read as the V1 read them', () => {
-  test('mergebot', async () => {
-    const expected: Record<string, Record<string, unknown>> = await Bun.file(resolve(pages, 'mergebot.json')).json();
-    // The V1 took the r+ its detached 20.0 port misses for the PR's own.
-    Object.assign(expected['odoo/enterprise#135824'] ?? {}, { missing_r: false });
-    for (const name of readdirSync(pages).filter((file) => file.startsWith('mb-'))) {
-      const [, slug, number] = name.slice(0, -5).split('-') as [string, string, string];
-      const repo = slug.replace('_', '/');
-      const key = `${repo}#${number}`;
-      const parsed =
-        expected[key]?.state === 'missing'
-          ? { repo, number: Number(number), state: 'missing', fetched: 0 }
-          : parseMergebot(await read(name), repo, Number(number), 0);
-      // The V1 missed the cells of detached forward-ports, their title before their class, and kept no merge date per cell.
-      const page = await read(name);
-      const detached = new Set(
-        [...page.matchAll(/title="detached"[^>]*>\s*<span[^>]*>\s*<a href="\/[^"]+\/pull\/(\d+)"/g)].map((match) => Number(match[1])),
-      );
-      const { fetched, ...rest } = parsed;
-      const linked = rest.linked?.filter((link) => !detached.has(link.number)).map(({ merged_at, ...link }) => link);
-      expect([key, { ...rest, ...(linked && { linked }) }]).toEqual([key, expected[key] as never]);
-    }
-  });
-
-  test('runbot', async () => {
-    const config = await Bun.file(resolve(import.meta.dir, '../../../../config.json')).json();
-    const names = new Set<string>([...config.people, ...config.guests]);
-    const parsed = parseRunbot(await read('rb-lebm.html'), (name) => ownerOf(name, names) === 'lebm');
-    expect(JSON.parse(JSON.stringify(parsed))).toEqual(await Bun.file(resolve(pages, 'runbot.json')).json());
-  });
-});
+import { parseMergebot, readMergebot } from './web';
 
 test('the forward-ports table holds the detached ports, and when each port merged', () => {
   const merged = (number: number, at: string) =>

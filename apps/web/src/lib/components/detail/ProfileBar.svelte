@@ -5,7 +5,7 @@ import { sum } from '#lib/squad/model.ts';
 import { tooltip } from '#lib/tip.svelte.ts';
 import { profiles, words } from './measures.ts';
 
-/** The split of a person's lines over the stack, one fixed hue per part whatever the person: the colours never follow a rank. */
+/** The split of a person's lines over the stack, one fixed hue per part whatever the person. */
 let { counts, legend = false, height = 10 }: { counts: number[]; legend?: boolean; height?: number } = $props();
 const total = $derived(sum(counts));
 const parts = $derived(profiles.map((k, i) => [k, counts[i] ?? 0] as const).filter(([, n]) => n));

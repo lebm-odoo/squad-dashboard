@@ -38,6 +38,7 @@ const app = (overrides: Partial<AppDeps> = {}) =>
     settings: {
       saveConfig: async () => dashboardConfig.parse({ me: 'abcd' }),
       loginReport: async () => [],
+      keySources: async () => ({ github: 'host', odoo: 'none' }),
       todos: async () => [],
       saveTodos: async (items) => items,
       collectSettings: async () => collectSettings.parse({}),
@@ -131,7 +132,10 @@ test('creates, locks and unlocks the vault', async () => {
 
 test('asks what to follow on the first opening, before config.json exists, and writes it', async () => {
   const path = join(await mkdtemp(join(tmpdir(), 'sd-setup-')), 'config.json');
-  const settings = { saveConfig: (patch: Parameters<typeof saveConfig>[1]) => saveConfig(path, patch) } as AppDeps['settings'];
+  const settings = {
+    saveConfig: (patch: Parameters<typeof saveConfig>[1]) => saveConfig(path, patch),
+    keySources: async () => ({ github: 'host', odoo: 'none' }),
+  } as AppDeps['settings'];
   const server = app({ loadConfig: () => loadConfig(path), settings });
   const put = (body: unknown) => server.request('/api/setup', { ...json(body), method: 'PUT' });
   expect(await (await server.request('/api/setup', { headers: local })).json()).toEqual({
@@ -139,6 +143,7 @@ test('asks what to follow on the first opening, before config.json exists, and w
     me: null,
     whoami: 'abcd',
     squad: null,
+    keys: { github: 'host', odoo: 'none' },
   });
   expect((await put({ follow: 'squad', me: 'abcd', squad: null })).status).toBe(400);
 
@@ -151,7 +156,10 @@ test('asks what to follow on the first opening, before config.json exists, and w
 test('starts from the squad of a V1 config.json, which the first page then replaces', async () => {
   const path = join(await mkdtemp(join(tmpdir(), 'sd-setup-')), 'config.json');
   await writeFile(path, JSON.stringify({ lead: 'ijkl', members: ['abcd', 'efgh'], arrivals: { efgh: '2025-09' } }));
-  const settings = { saveConfig: (patch: Parameters<typeof saveConfig>[1]) => saveConfig(path, patch) } as AppDeps['settings'];
+  const settings = {
+    saveConfig: (patch: Parameters<typeof saveConfig>[1]) => saveConfig(path, patch),
+    keySources: async () => ({ github: 'host', odoo: 'none' }),
+  } as AppDeps['settings'];
   const server = app({ loadConfig: () => loadConfig(path), settings });
   expect(await (await server.request('/api/setup', { headers: local })).json()).toMatchObject({
     follow: null,

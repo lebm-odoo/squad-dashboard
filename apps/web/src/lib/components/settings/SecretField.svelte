@@ -1,5 +1,6 @@
 <script lang="ts">
 import { parseResponse } from 'hono/client';
+import type { Snippet } from 'svelte';
 import { toast } from 'svelte-sonner';
 import { api, messageOf } from '#lib/api.ts';
 import { Button } from '#lib/components/ui/button/index.ts';
@@ -8,8 +9,13 @@ import { m } from '#lib/i18n.svelte.ts';
 import { queryClient } from '#lib/live.svelte.ts';
 import Section from './Section.svelte';
 
-let { name, title, sub, present }: { name: 'github_token' | 'odoo_api_key'; title: string; sub: string; present: boolean | null } =
-  $props();
+let {
+  name,
+  title,
+  sub,
+  present,
+  help,
+}: { name: 'github_token' | 'odoo_api_key'; title: string; sub: string; present: boolean | null; help?: Snippet } = $props();
 let value = $state('');
 let busy = $state(false);
 const words = $derived(m().settings.connections);
@@ -48,4 +54,5 @@ async function run(request: Promise<Response>) {
       <Button size="sm" variant="outline" disabled={busy} onclick={() => run(api.settings.secrets[':name'].$delete({ param: { name } }))}>{m().settings.remove}</Button>
     {/if}
   </div>
+  {#if help}<div class="mt-3 border-t pt-3">{@render help()}</div>{/if}
 </Section>

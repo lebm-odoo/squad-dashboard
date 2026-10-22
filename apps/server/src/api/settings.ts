@@ -39,6 +39,7 @@ export function settingsRoutes({ settings, secrets, loadConfig, whoami, collecti
       me: config?.me ?? (v1.success ? v1.data.me : undefined) ?? null,
       whoami: await whoami(),
       squad: config?.squad ?? (v1.success ? v1.data.squad : undefined) ?? null,
+      keys: await settings.keySources(),
     };
   };
   return (

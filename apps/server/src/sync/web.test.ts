@@ -13,9 +13,9 @@ describe.skipIf(!testDatabaseUrl)('runbot and mergebot', () => {
           asked.push(url);
           return new Response('', { status: 404 });
         }) as unknown as typeof fetch;
-        const status = await syncWeb(db, [], { followed: new Set(['lebm']), related: new Set(['odoo/enterprise#5']), now: 1_000, fetcher });
+        const status = await syncWeb(db, [], { followed: new Set(['anne']), related: new Set(['odoo/enterprise#5']), now: 1_000, fetcher });
         expect(asked).toEqual([
-          'https://runbot.odoo.com/runbot/r-d-1?search=lebm&limit=500',
+          'https://runbot.odoo.com/runbot/r-d-1?search=anne&limit=500',
           'https://mergebot.odoo.com/odoo/enterprise/pull/5',
         ]);
         expect(status.runbot_error).toBeTruthy();

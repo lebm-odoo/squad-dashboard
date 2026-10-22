@@ -8,6 +8,7 @@ import { slide } from 'svelte/transition';
 import { toast } from 'svelte-sonner';
 import { api, messageOf } from '#lib/api.ts';
 import Seg from '#lib/components/Seg.svelte';
+import TokenHelp from '#lib/components/settings/TokenHelp.svelte';
 import Mark from '#lib/components/shell/Mark.svelte';
 import { Button } from '#lib/components/ui/button/index.ts';
 import { Checkbox } from '#lib/components/ui/checkbox/index.ts';
@@ -134,6 +135,25 @@ async function start() {
             </div>
           </div>
         {/if}
+      </div>
+
+      <div class="mt-4 grid gap-3 rounded-xl border bg-card p-5">
+        <div class="flex items-center justify-between gap-3">
+          <p class="text-sm font-medium">{w.connections}</p>
+          <Button variant="outline" size="sm" onclick={() => setup.refetch()}>{w.lookAgain}</Button>
+        </div>
+        {#each ['github', 'odoo'] as const as kind (kind)}
+          {@const source = setup.data.keys[kind]}
+          <div class="grid gap-1.5 border-t pt-3">
+            <p class="text-[13px]">
+              <span class="font-medium">{kind === 'github' ? 'GitHub' : 'Odoo'}</span>
+              <span class={source === 'none' && kind === 'github' ? 'text-critical' : 'text-muted-foreground'}>
+                · {source === 'none' ? w.keyMissing[kind] : w.keyFound(m().settings.connections.sources[kind][source] ?? source)}
+              </span>
+            </p>
+            {#if source === 'none'}<TokenHelp {kind} />{/if}
+          </div>
+        {/each}
       </div>
 
       <div class="mt-5 flex flex-wrap items-center justify-end gap-4">

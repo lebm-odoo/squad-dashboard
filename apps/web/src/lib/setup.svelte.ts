@@ -25,6 +25,13 @@ const en = {
   lead: 'Squad lead',
   members: 'Squad members',
   membersHint: 'Trigrams separated by spaces.',
+  connections: 'Connections',
+  keyFound: (from: string) => `found: ${from}`,
+  keyMissing: { github: 'none yet: needed to read the PRs and reviews', odoo: 'none yet: optional, for the Odoo tasks' } as Record<
+    string,
+    string
+  >,
+  lookAgain: 'Look again',
   collect: 'Start the first collection',
   start: 'Start',
   starting: 'Saving…',
@@ -46,6 +53,13 @@ const fr: typeof en = {
   lead: 'Lead du squad',
   members: 'Membres du squad',
   membersHint: 'Trigrammes séparés par des espaces.',
+  connections: 'Connexions',
+  keyFound: (from) => `trouvé : ${from}`,
+  keyMissing: {
+    github: 'aucun pour l’instant : il faut pour lire les PR et les reviews',
+    odoo: 'aucune pour l’instant : facultative, pour les tâches Odoo',
+  },
+  lookAgain: 'Regarder à nouveau',
   collect: 'Lancer la première collecte',
   start: 'Commencer',
   starting: 'Enregistrement…',

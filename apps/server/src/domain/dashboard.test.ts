@@ -6,8 +6,8 @@ const merged = (number: number, target: string): MergedCommit => ({
   id: `enterprise:${number}`,
   repo: 'enterprise',
   sha: String(number).repeat(40).slice(0, 40),
-  owner: 'jugj',
-  author: 'jugj',
+  owner: 'carl',
+  author: 'carl',
   coauthor: false,
   at: 1000,
   ct: 2000 + number,
@@ -32,8 +32,8 @@ const pr = (number: number, branch: string, fields: Partial<MergebotPr>): Mergeb
 const inputOf = (fields: Partial<DashboardInput>): DashboardInput => ({
   now: 10_000,
   sinceDays: 30,
-  me: 'lebm',
-  names: new Set(['jugj']),
+  me: 'anne',
+  names: new Set(['carl']),
   forcedLogins: {},
   deducedLogins: {},
   viewer: null,
@@ -51,7 +51,7 @@ const inputOf = (fields: Partial<DashboardInput>): DashboardInput => ({
   archivedFeatures: {},
   requests: null,
   related: [],
-  squad: new Set(['lebm']),
+  squad: new Set(['anne']),
   lastFetch: 10_000,
   ruleFiles: {},
   mechanics: () => ({}),
@@ -67,8 +67,8 @@ test('a merge git saw beats a mergebot page read before it, the forward-port tab
   const input = inputOf({
     merged: [merged(1, 'saas-19.3'), merged(2, '20.0')],
     mergebot: {
-      'odoo/enterprise#1': pr(1, 'saas-19.3-dimona-jugj', { merged_at: 2001, linked: ports }),
-      'odoo/enterprise#2': pr(2, '20.0-saas-19.3-dimona-jugj-579183-fw', { state: 'open', phase: 'Staged', blocked: true, linked: ports }),
+      'odoo/enterprise#1': pr(1, 'saas-19.3-dimona-carl', { merged_at: 2001, linked: ports }),
+      'odoo/enterprise#2': pr(2, '20.0-saas-19.3-dimona-carl-123456-fw', { state: 'open', phase: 'Staged', blocked: true, linked: ports }),
     },
   });
   const prs = deriveDashboard(input).features.flatMap((f) => f.prs);
@@ -90,15 +90,15 @@ test('a PR retargeted to another stable version is of that version; one named af
   const { features } = deriveDashboard(
     inputOf({
       mergebot: {
-        'odoo/enterprise#1': pr(1, 'saas-19.2-opw-6560808-gantt-jugj', { state: 'open', linked: own(1, '19.0') }),
-        'odoo/enterprise#2': pr(2, 'master-dimona-jugj', { state: 'open', linked: own(2, '20.0') }),
+        'odoo/enterprise#1': pr(1, 'saas-19.2-opw-1234567-gantt-carl', { state: 'open', linked: own(1, '19.0') }),
+        'odoo/enterprise#2': pr(2, 'master-dimona-carl', { state: 'open', linked: own(2, '20.0') }),
       },
-      runbot: { 'saas-19.2-opw-6560808-gantt-jugj': bundle(1), 'master-dimona-jugj': bundle(2) },
+      runbot: { 'saas-19.2-opw-1234567-gantt-carl': bundle(1), 'master-dimona-carl': bundle(2) },
     }),
   );
   expect(features.map((f) => [f.name, f.version])).toEqual([
-    ['master-dimona-jugj', 'master'],
-    ['saas-19.2-opw-6560808-gantt-jugj', '19.0'],
+    ['master-dimona-carl', 'master'],
+    ['saas-19.2-opw-1234567-gantt-carl', '19.0'],
   ]);
 });
 
@@ -106,7 +106,7 @@ test('a draft runbot has no bundle for yet joins the branch git read', () => {
   const { features } = deriveDashboard(
     inputOf({
       branches: {
-        'master-dimona-jugj': {
+        'master-dimona-carl': {
           enterprise: {
             head: 'a',
             url: '',
@@ -119,20 +119,20 @@ test('a draft runbot has no bundle for yet joins the branch git read', () => {
           },
         },
       },
-      mergebot: { 'odoo/enterprise#1': pr(1, 'master-dimona-jugj', { state: 'open', draft: true }) },
+      mergebot: { 'odoo/enterprise#1': pr(1, 'master-dimona-carl', { state: 'open', draft: true }) },
     }),
   );
-  expect(features.map((f) => [f.name, f.prs.map((row) => row.number)])).toEqual([['master-dimona-jugj', [1]]]);
+  expect(features.map((f) => [f.name, f.prs.map((row) => row.number)])).toEqual([['master-dimona-carl', [1]]]);
 });
 
 test('a PR of someone else I review is a feature of its author, without their runbot or merged work', () => {
   const open = inputOf({
-    names: new Set(['lebm', 'jugj']),
-    mergebot: { 'odoo/enterprise#5': pr(5, 'master-dimona-jugj', { state: 'open', phase: 'Ready' }) },
+    names: new Set(['anne', 'carl']),
+    mergebot: { 'odoo/enterprise#5': pr(5, 'master-dimona-carl', { state: 'open', phase: 'Ready' }) },
   });
   expect(deriveDashboard(open).features).toEqual([]);
   const features = deriveDashboard({ ...open, related: ['odoo/enterprise#5'] }).features;
-  expect(features.map((f) => [f.name, f.owner, f.prs.map((row) => row.number)])).toEqual([['master-dimona-jugj', 'jugj', [5]]]);
+  expect(features.map((f) => [f.name, f.owner, f.prs.map((row) => row.number)])).toEqual([['master-dimona-carl', 'carl', [5]]]);
 });
 
 test('a review asked by a colleague is told apart: my squad, the members of my GitHub teams, a branch of the squad', () => {
@@ -141,21 +141,21 @@ test('a review asked by a colleague is told apart: my squad, the members of my G
     inputOf({
       requests: {
         v: 2,
-        login: 'lebm-odoo',
-        colleagues: ['Arpi-odoo'],
+        login: 'anne-odoo',
+        colleagues: ['Eric-odoo'],
         prs: [
-          asked('odoo/odoo#1', 'raibr-odoo', 'master-a-raibr'),
-          asked('odoo/odoo#2', 'arpi-odoo', 'master-b-arpi'),
-          asked('odoo/odoo#3', 'kaei-odoo', 'master-c-kaei'),
+          asked('odoo/odoo#1', 'gina-odoo', 'master-a-gina'),
+          asked('odoo/odoo#2', 'eric-odoo', 'master-b-eric'),
+          asked('odoo/odoo#3', 'fred-odoo', 'master-c-fred'),
         ],
       },
-      squad: new Set(['lebm', 'raibr']),
+      squad: new Set(['anne', 'gina']),
     }),
   );
   expect(review_requests?.prs.map((p) => [p.pr, p.who, p.colleague])).toEqual([
-    ['odoo/odoo#1', 'raibr', true],
-    ['odoo/odoo#2', 'arpi', true],
-    ['odoo/odoo#3', 'kaei', false],
+    ['odoo/odoo#1', 'gina', true],
+    ['odoo/odoo#2', 'eric', true],
+    ['odoo/odoo#3', 'fred', false],
   ]);
   expect(review_requests).not.toHaveProperty('colleagues');
 });
@@ -164,21 +164,21 @@ test('a reviewer nobody listed is known by their r+: the one login that gave it,
   const signed = (number: number, reviewers: string[]) => ({ ...merged(number, 'saas-19.3'), reviewers });
   const { logins, review_requests } = deriveDashboard(
     inputOf({
-      merged: [signed(1, ['Yannick Tivisse (yti)']), signed(2, ['Yannick Tivisse (yti)']), signed(3, ['Ann (ann)', 'Bob (bob)'])],
+      merged: [signed(1, ['Dora Rine (dor)']), signed(2, ['Dora Rine (dor)']), signed(3, ['Ann (ann)', 'Bob (bob)'])],
       rplus: {
-        'odoo/enterprise#1': { r: [['tivisse', 2000]] },
-        'odoo/enterprise#2': { r: [['tivisse', 2001]] },
+        'odoo/enterprise#1': { r: [['dorine', 2000]] },
+        'odoo/enterprise#2': { r: [['dorine', 2001]] },
         'odoo/enterprise#3': { r: [['ann-gh', 2002]] },
       },
       requests: {
         v: 2,
-        login: 'lebm-odoo',
-        colleagues: ['tivisse'],
-        prs: [{ pr: 'odoo/odoo#9', author: 'jugj-odoo', asked_at: 1, reviews: [['tivisse', 'APPROVED', 5]], rplus: [] }],
+        login: 'anne-odoo',
+        colleagues: ['dorine'],
+        prs: [{ pr: 'odoo/odoo#9', author: 'carl-odoo', asked_at: 1, reviews: [['dorine', 'APPROVED', 5]], rplus: [] }],
       },
     }),
   );
-  expect(logins).toMatchObject({ yti: 'tivisse' });
+  expect(logins).toMatchObject({ dor: 'dorine' });
   expect(logins).not.toHaveProperty('ann');
-  expect(review_requests?.prs[0]?.validations).toEqual([['yti', 'APPROVED', 5]]);
+  expect(review_requests?.prs[0]?.validations).toEqual([['dor', 'APPROVED', 5]]);
 });
