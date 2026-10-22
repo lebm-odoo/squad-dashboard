@@ -1,0 +1,28 @@
+{
+  "name": "squad-dashboard",
+  "version": "2.0.0",
+  "repository": "github:lebm-odoo/squad-dashboard",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter '@sd/server' --filter '@sd/web' dev",
+    "build": "bun run --filter '@sd/web' build",
+    "start": "bun apps/server/src/main.ts",
+    "check": "bun --bun ./node_modules/@biomejs/biome/bin/biome check . && bun run --filter '*' check",
+    "test": "bun test apps/server packages/shared && bun run --filter '@sd/web' test",
+    "db:generate": "bun run --filter '@sd/server' db:generate",
+    "import-v1": "bun apps/server/src/cli/import-v1.ts",
+    "collect": "bun apps/server/src/cli/collect.ts",
+    "db:diagram": "bun apps/server/src/cli/db-diagram.ts",
+    "release": "bun scripts/release.ts"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@types/bun": "1.4.3",
+    "typescript": "6.0.3"
+  }
+}

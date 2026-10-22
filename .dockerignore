@@ -1,0 +1,17 @@
+**/node_modules
+**/.svelte-kit
+apps/web/build
+.git
+.github
+data
+__pycache__
+.env
+config.json
+cache.json
+history.json
+history.json.bak
+data.json
+data.js
+todos.json
+*.tmp
+backups

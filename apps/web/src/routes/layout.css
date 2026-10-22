@@ -1,0 +1,462 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(0.985 0.002 247.839);
+  --foreground: oklch(0.21 0.034 264.665);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.034 264.665);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.034 264.665);
+  --primary: oklch(0.21 0.034 264.665);
+  --primary-foreground: oklch(0.985 0.002 247.839);
+  --secondary: oklch(0.967 0.003 264.542);
+  --secondary-foreground: oklch(0.21 0.034 264.665);
+  --muted: oklch(0.967 0.003 264.542);
+  --muted-foreground: oklch(0.551 0.027 264.364);
+  --accent: oklch(0.967 0.003 264.542);
+  --accent-foreground: oklch(0.21 0.034 264.665);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.928 0.006 264.531);
+  --input: oklch(0.928 0.006 264.531);
+  --ring: oklch(0.707 0.022 261.325);
+  --sidebar: oklch(0.985 0.002 247.839);
+  --sidebar-foreground: oklch(0.21 0.034 264.665);
+  --sidebar-primary: oklch(0.21 0.034 264.665);
+  --sidebar-primary-foreground: oklch(0.985 0.002 247.839);
+  --sidebar-accent: oklch(0.945 0.004 264.531);
+  --sidebar-accent-foreground: oklch(0.21 0.034 264.665);
+  --sidebar-border: oklch(0.928 0.006 264.531);
+  --sidebar-ring: oklch(0.707 0.022 261.325);
+  /* Status and people: the squad dashboard's colours, people in the order of the squad. */
+  --good: #0ca30c;
+  --good-text: #006300;
+  --warn: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+  --link: #2a78d6;
+  --p0: #2a78d6;
+  --p1: #eb6834;
+  --p2: #1baf7a;
+  --p3: #eda100;
+  --p4: #e87ba4;
+  --p5: #008300;
+  --p6: #4a3aa7;
+  --p7: #e34948;
+  --brand: #2a78d6;
+  --brand-2: #7a4fe0;
+}
+
+.dark {
+  --background: oklch(0.145 0.012 264.4);
+  --foreground: oklch(0.967 0.003 264.542);
+  --card: oklch(0.19 0.015 264.4);
+  --card-foreground: oklch(0.967 0.003 264.542);
+  --popover: oklch(0.19 0.015 264.4);
+  --popover-foreground: oklch(0.967 0.003 264.542);
+  --primary: oklch(0.928 0.006 264.531);
+  --primary-foreground: oklch(0.21 0.034 264.665);
+  --secondary: oklch(0.27 0.02 264.4);
+  --secondary-foreground: oklch(0.967 0.003 264.542);
+  --muted: oklch(0.27 0.02 264.4);
+  --muted-foreground: oklch(0.707 0.022 261.325);
+  --accent: oklch(0.27 0.02 264.4);
+  --accent-foreground: oklch(0.967 0.003 264.542);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.551 0.027 264.364);
+  --sidebar: oklch(0.17 0.013 264.4);
+  --sidebar-foreground: oklch(0.967 0.003 264.542);
+  --sidebar-primary: oklch(0.55 0.17 255);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.25 0.02 264.4);
+  --sidebar-accent-foreground: oklch(0.967 0.003 264.542);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --good-text: #0ca30c;
+  --link: #3987e5;
+  --p0: #3987e5;
+  --p1: #d95926;
+  --p2: #199e70;
+  --p3: #c98500;
+  --p4: #d55181;
+  --p5: #008300;
+  --p6: #9085e9;
+  --p7: #e66767;
+  --brand: #3987e5;
+  --brand-2: #a084f2;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-good: var(--good);
+  --color-good-text: var(--good-text);
+  --color-warn: var(--warn);
+  --color-serious: var(--serious);
+  --color-critical: var(--critical);
+  --color-link: var(--link);
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* The squad dashboard's one-line items and tags: hundreds of them on a page, one class each. */
+@layer components {
+  .line {
+    @apply -mx-1.5 flex min-w-0 cursor-pointer items-baseline gap-2 rounded-md px-1.5 py-[3px] text-[13px] hover:bg-muted focus-visible:outline-2 focus-visible:outline-link;
+  }
+  .line > .txt {
+    @apply min-w-0 flex-1 truncate;
+  }
+  .line > .meta {
+    @apply flex-none text-xs whitespace-nowrap text-muted-foreground tabular-nums;
+  }
+  .line.has-todo {
+    box-shadow: inset 2px 0 0 var(--link);
+    background: color-mix(in srgb, var(--link) 10%, transparent);
+  }
+  .ico {
+    @apply w-3.5 flex-none text-center text-[11px];
+  }
+  .ico.open,
+  .ico.rplus,
+  .ico.direct {
+    color: var(--link);
+  }
+  .ico.draft,
+  .ico.wip {
+    @apply text-xs text-foreground/70;
+  }
+  .ico.merged,
+  .ico.validation {
+    color: var(--good);
+  }
+  .ico.port,
+  .ico.changes {
+    color: var(--p3);
+  }
+  .ico.comment,
+  .ico.team,
+  .ico.closed {
+    @apply text-muted-foreground;
+  }
+  .ico.guess {
+    color: var(--serious);
+  }
+  .ico.task {
+    color: var(--p6);
+  }
+  .rtag {
+    @apply inline-flex items-center gap-1 rounded px-[7px] text-[11.5px] leading-[18px] whitespace-nowrap text-foreground no-underline;
+    background: var(--muted);
+  }
+  a.rtag:hover {
+    outline: 1px solid var(--border);
+  }
+  .rtag.rplus,
+  .rtag.k-task {
+    background: color-mix(in srgb, var(--link) 16%, var(--card));
+  }
+  .rtag.validation,
+  .rtag.fw-merged {
+    background: color-mix(in srgb, var(--good) 16%, var(--card));
+  }
+  .rtag.changes,
+  .rtag.fw-open {
+    background: color-mix(in srgb, var(--warn) 22%, var(--card));
+  }
+  .rtag.fw-blocked {
+    background: color-mix(in srgb, var(--serious) 22%, var(--card));
+  }
+  .rtag.comment {
+    @apply text-foreground/70;
+  }
+  .rtag.fw-closed {
+    @apply text-muted-foreground line-through;
+  }
+  .rtag.guess {
+    @apply leading-4;
+    border: 1px dashed var(--serious);
+  }
+  .rtag.k-opw {
+    background: color-mix(in srgb, var(--critical) 18%, var(--card));
+  }
+  .rtag.k-sentry {
+    background: color-mix(in srgb, var(--p6) 20%, var(--card));
+  }
+  .rtag.k-upg {
+    background: color-mix(in srgb, var(--p2) 20%, var(--card));
+  }
+  .pin {
+    @apply text-[11.5px] whitespace-nowrap;
+    color: var(--link);
+  }
+  .linkish {
+    @apply cursor-pointer text-left text-xs hover:underline;
+    color: var(--link);
+  }
+  .section-title {
+    @apply text-[13px] font-semibold tracking-wider text-foreground/70 uppercase;
+  }
+  .col-title {
+    @apply mb-1.5 text-[11.5px] font-semibold tracking-wide text-muted-foreground uppercase;
+  }
+  .sub {
+    @apply text-[12.5px] text-muted-foreground;
+  }
+}
+
+/* Squad's Work, Timeline and Journey: grids and charts drawn as the squad dashboard drew them. */
+@layer components {
+  .badge {
+    @apply inline-flex items-center gap-[5px] rounded-full border bg-card px-2 text-[11.5px] leading-[18px] whitespace-nowrap text-foreground/70;
+  }
+  .badge .ico {
+    @apply w-auto text-[10px] leading-none;
+  }
+  .st-merged .ico {
+    color: var(--good);
+  }
+  .st-open .ico {
+    color: var(--link);
+  }
+  .st-closed .ico,
+  .st-wip .ico,
+  .st-draft .ico {
+    @apply text-muted-foreground;
+  }
+  .st-review .ico {
+    color: var(--p6);
+  }
+  .st-warn .ico {
+    color: var(--warn);
+  }
+  .st-bad .ico {
+    color: var(--critical);
+  }
+  .work-grid {
+    display: grid;
+    grid-template-columns: 104px minmax(280px, 2.6fr) 156px minmax(170px, 1.3fr) minmax(150px, 1.1fr) 96px;
+  }
+  .work-grid > div {
+    display: contents;
+  }
+  .work-grid > div > * {
+    @apply flex min-w-0 flex-wrap content-start items-start gap-1 border-t px-2.5 py-[11px];
+  }
+  .work-grid > .head > * {
+    @apply border-t-0 pt-1 pb-2 text-[11.5px] font-semibold tracking-wide text-muted-foreground uppercase;
+  }
+  .work-grid > .flash > * {
+    animation: flash 2.4s ease-out;
+  }
+  .work-grid > .row {
+    cursor: pointer;
+  }
+  .work-grid > .row[aria-expanded="true"] > * {
+    @apply bg-muted;
+  }
+  .work-grid > .row:hover > * {
+    @apply bg-muted;
+  }
+  .work-grid > .row.given {
+    cursor: default;
+  }
+  .work-grid > .row.given > * {
+    background: color-mix(in srgb, var(--p6) 3.5%, var(--card));
+  }
+  .work-grid > .row.given:hover > * {
+    background: color-mix(in srgb, var(--p6) 6%, var(--card));
+  }
+  .work-grid > .row.has-todo > *:first-child {
+    box-shadow: inset 3px 0 0 var(--link);
+  }
+  .work-grid .who {
+    @apply flex-col gap-[3px] text-[13px];
+  }
+  .work-grid .feat {
+    @apply flex-col flex-nowrap gap-[3px];
+  }
+  .work-grid .feat .title {
+    @apply flex items-baseline gap-1.5 text-[13.5px] leading-5 font-medium;
+  }
+  .work-grid .feat .caret {
+    @apply w-2.5 flex-none text-[10px] text-muted-foreground;
+  }
+  .work-grid .feat .meta {
+    @apply flex flex-wrap gap-x-2.5 gap-y-0.5 pl-4 text-xs text-muted-foreground;
+  }
+  .work-grid .when {
+    @apply flex-nowrap justify-end gap-1 text-right text-[12.5px] leading-5 text-foreground/70;
+  }
+  .work-grid > .detail > div {
+    @apply col-span-full block border-t-0 bg-muted pt-1 pr-[18px] pb-4 pl-[30px];
+  }
+  @media (max-width: 1000px) {
+    .work-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .work-grid > .head {
+      display: none;
+    }
+    .work-grid .feat {
+      grid-column: 1 / -1;
+      order: -1;
+    }
+  }
+  .detail-grid {
+    @apply grid gap-x-7 gap-y-3 border-t border-dashed pt-2.5;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  }
+  .plain-list {
+    @apply text-[12.5px];
+  }
+  .plain-list li {
+    @apply flex min-w-0 items-baseline gap-2 py-0.5;
+  }
+  .plain-list .d {
+    @apply w-[76px] flex-none text-muted-foreground tabular-nums;
+  }
+  .plain-list .i {
+    @apply w-3.5 flex-none text-center text-muted-foreground;
+  }
+  .plain-list .t {
+    @apply min-w-0 truncate;
+  }
+  .kv {
+    @apply mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-[3px] text-[12.5px];
+  }
+  .kv dt {
+    @apply text-muted-foreground;
+  }
+  .kv dd {
+    @apply min-w-0 [overflow-wrap:anywhere];
+  }
+  .timeline .day {
+    @apply border-b px-1 pt-4 pb-1.5 text-[11.5px] font-semibold tracking-wide text-muted-foreground uppercase first:pt-0;
+  }
+  .timeline .ev {
+    @apply grid items-baseline gap-3 border-b px-1 py-[7px] text-[13px];
+    grid-template-columns: 46px 104px 150px minmax(0, 1fr);
+  }
+  @media (max-width: 760px) {
+    .timeline .ev {
+      grid-template-columns: 46px 1fr;
+    }
+  }
+  .hero {
+    @apply mb-4 grid gap-3;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+  .signals > li {
+    @apply grid grid-cols-[18px_minmax(0,1fr)] gap-2 border-t py-[7px] text-[13.5px] leading-normal first:border-t-0;
+  }
+  .signals .ico {
+    @apply w-auto text-center text-[13.5px] font-bold;
+  }
+  .signals .good .ico {
+    color: var(--good-text);
+  }
+  .signals .talk .ico {
+    color: var(--link);
+  }
+  svg.chart {
+    @apply block h-auto w-full overflow-visible;
+  }
+  svg.chart text {
+    fill: var(--muted-foreground);
+    font-size: 10.5px;
+  }
+  svg.chart .gridline {
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+  svg.chart .baseline {
+    stroke: color-mix(in srgb, var(--foreground) 25%, transparent);
+    stroke-width: 1;
+  }
+  svg.chart .hit {
+    fill: transparent;
+  }
+  svg.chart g.mark:hover .bar {
+    filter: brightness(1.1);
+  }
+  .legend {
+    @apply mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-foreground/70;
+  }
+  .legend > span {
+    @apply inline-flex items-center gap-1.5;
+  }
+  .legend i {
+    @apply inline-block size-2.5 rounded-[3px];
+  }
+}
+
+@keyframes flash {
+  from {
+    background: color-mix(in srgb, var(--link) 12%, transparent);
+  }
+  to {
+    background: transparent;
+  }
+}
+
+/* LayerChart on the shadcn theme: its tooltips and axes read these. */
+.lc-root-container,
+.lc-tooltip-root {
+  --color-primary: var(--primary);
+  --color-surface-100: var(--popover);
+  --color-surface-200: var(--muted);
+  --color-surface-300: var(--muted);
+  --color-surface-content: var(--popover-foreground);
+}
+
+/* Opaque, as a popover: a tooltip over bars must not let them show through. */
+.lc-tooltip-container[data-variant="default"] {
+  background-color: var(--popover);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.14);
+  backdrop-filter: none;
+}

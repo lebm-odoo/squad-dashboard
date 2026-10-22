@@ -1,0 +1,30 @@
+{
+  "name": "@sd/server",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/app.ts"
+  },
+  "scripts": {
+    "dev": "bun --watch src/main.ts",
+    "check": "bun --bun ./node_modules/typescript/bin/tsc -p .",
+    "db:generate": "bun --bun ./node_modules/drizzle-kit/bin.cjs generate"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "0.9.1",
+    "@octokit/core": "7.0.8",
+    "@octokit/plugin-retry": "8.1.1",
+    "@octokit/plugin-throttling": "11.0.5",
+    "@sd/shared": "workspace:*",
+    "bottleneck": "2.19.5",
+    "drizzle-orm": "0.45.4",
+    "entities": "8.1.0",
+    "hono": "4.13.13",
+    "postgres": "3.4.9",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "drizzle-kit": "0.31.11",
+    "typescript": "6.0.3"
+  }
+}
