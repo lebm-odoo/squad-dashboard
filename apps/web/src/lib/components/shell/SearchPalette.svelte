@@ -39,8 +39,9 @@ const featureIndex = $derived(
   ),
 );
 const terms = $derived(search.trim().toLowerCase().split(/\s+/).filter(Boolean));
-const matching = <T,>(index: readonly (readonly [T, string])[], limit: number) =>
-  index.flatMap(([x, text]) => (terms.every((term) => text.includes(term)) ? [x] : [])).slice(0, limit);
+function matching<T>(index: readonly (readonly [T, string])[], limit: number) {
+  return index.flatMap(([x, text]) => (terms.every((term) => text.includes(term)) ? [x] : [])).slice(0, limit);
+}
 const foundPages = $derived(pages.filter(([, text]) => terms.every((term) => text.toLowerCase().includes(term))));
 const foundPeople = $derived(matching(peopleIndex, 12));
 const foundFeatures = $derived(search.trim().length >= 2 ? matching(featureIndex, 30) : []);
