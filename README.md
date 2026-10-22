@@ -1,7 +1,7 @@
-# Squad dashboard
+# Dashboard
 
-A local dashboard for an R&D developer and their squad: what waits for you today, your work and your reviews first, then,
-when you follow your squad, what each of its people is on and how their work evolves.
+A local dashboard for an R&D developer and their squad, once named the squad dashboard: what waits for you today, your
+work and your reviews first, then, when you follow your squad, what each of its people is on and how their work evolves.
 
 ## What it shows
 
@@ -49,7 +49,7 @@ the Odoo key from the keyring, and who you are from your git e-mail.
 The dashboard also opens alone, in a Chrome window without tabs or address bar, from the application launcher:
 
 ```sh
-scripts/app.sh install   # once: "Squad Dashboard" in the launcher (~/.local/share/applications)
+scripts/app.sh install   # once: "Dashboard" in the launcher (~/.local/share/applications)
 scripts/app.sh           # what the launcher runs
 ```
 

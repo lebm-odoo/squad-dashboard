@@ -7,9 +7,9 @@ const id = $props.id();
 <svg class={['mark', loop && 'loop', className]} viewBox="0 0 32 32" aria-hidden="true">
   <defs>
     <linearGradient id="{id}-tile" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#12a150" />
-      <stop offset="0.5" stop-color="#7ab40d" />
-      <stop offset="1" stop-color="#e0a905" />
+      <stop offset="0" stop-color="#11795f" />
+      <stop offset="0.5" stop-color="#3f9a4a" />
+      <stop offset="1" stop-color="#9ab83a" />
     </linearGradient>
     <linearGradient id="{id}-shine" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#fff" stop-opacity="0" />
@@ -22,11 +22,11 @@ const id = $props.id();
     <rect width="32" height="32" rx="7" fill="url(#{id}-tile)" />
     <path
       class="letter"
-      d="M10.5 8.5V23.5H14a7.5 7.5 0 0 0 0-15Z"
+      d="M10.25 8.5V23.5h5a6.25 6.25 0 0 0 6.25-6.25v-2.5a6.25 6.25 0 0 0-6.25-6.25Z"
       pathLength="1"
       fill="none"
       stroke="#fff"
-      stroke-width="4.5"
+      stroke-width="4.25"
       stroke-linecap="round"
       stroke-linejoin="round"
     />

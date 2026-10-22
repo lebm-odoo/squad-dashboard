@@ -16,7 +16,7 @@ if [ "${1:-}" = install ]; then
   cat > "$apps/squad-dashboard.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Squad Dashboard
+Name=Dashboard
 Comment=Moi et mon squad, dans leur fenêtre
 Exec="$root/scripts/app.sh"
 Icon=$icon
@@ -29,7 +29,7 @@ EOF
 fi
 
 fail() {
-  notify-send -i "$icon" 'Squad Dashboard' "$1" 2>/dev/null || true
+  notify-send -i "$icon" 'Dashboard' "$1" 2>/dev/null || true
   echo "$1" >&2
   exit 1
 }

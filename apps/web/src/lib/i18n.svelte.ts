@@ -24,7 +24,7 @@ export function setLocale(locale: Locale) {
 
 const en = {
   intl: 'en-GB',
-  brand: 'Squad Dashboard',
+  brand: 'Dashboard',
   tagline: 'The super LEBM tool',
   theme: 'Light / dark theme',
   update: 'Update',
@@ -657,7 +657,7 @@ const en = {
 
 const fr: typeof en = {
   intl: 'fr-FR',
-  brand: 'Squad Dashboard',
+  brand: 'Dashboard',
   tagline: 'Le super outil de LEBM',
   theme: 'Thème clair / sombre',
   update: 'Mettre à jour',

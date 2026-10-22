@@ -33,8 +33,8 @@ version's.
   display, the data and the version.
 - English by default, French from the first page or the settings; light and dark theme; a search of pages, people and
   features (Ctrl K).
-- A logo of its own, a D in green, lemon and yellow; an opening screen once a session, the logo drawing itself; the first
-  page shows the logo too.
+- The app is named Dashboard, its logo a D in shades of green; an opening screen once a session, the logo drawing
+  itself; the first page shows the logo too.
 - In its own window from the application launcher: `scripts/app.sh install`. In Docker: `scripts/docker-up.sh`.
 - Settings › About tells when a new version is out; `scripts/update.sh` installs it after saving the database.
 
