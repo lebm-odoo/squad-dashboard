@@ -48,7 +48,12 @@ async function check() {
           {/if}
         </dd>
         <dt class="text-muted-foreground">{words.started}</dt>
-        <dd title={fdate(v.started_at)}>{rel(v.started_at)}</dd>
+        <!-- A server from before this page tells neither: the page is new, the code answering is not. -->
+        {#if v.started_at}
+          <dd title={fdate(v.started_at)}>{rel(v.started_at)}</dd>
+        {:else}
+          <dd class="text-critical">{words.oldServer}</dd>
+        {/if}
         <dt class="text-muted-foreground">{words.latest}</dt>
         <dd class="tabular-nums">
           {#if v.latest}
