@@ -409,7 +409,7 @@ describe('GitHub', () => {
     ]);
   });
 
-  test('a PR given my r+ unasked is found in my last comments and reviews, open or merged, within the month', async () => {
+  test('a PR given my r+ unasked is found in my last comments and reviews, open or closed by the mergebot, within the month', async () => {
     const day = 86400;
     const now = Date.parse('2026-10-17T09:00:00Z') / 1000;
     const iso = (at: number) => new Date(at * 1000).toISOString();
@@ -422,7 +422,7 @@ describe('GitHub', () => {
               nodes: [
                 { body: '@robodoo fw=skipmerge r+', createdAt: iso(now - day), pullRequest: on(40) },
                 { body: 'nice', createdAt: iso(now - day), pullRequest: on(41) },
-                { body: 'robodoo r+', createdAt: iso(now - day), pullRequest: on(43, 'MERGED') },
+                { body: 'robodoo r+', createdAt: iso(now - day), pullRequest: on(43, 'CLOSED') },
                 { body: 'robodoo r+', createdAt: iso(now - 40 * day), pullRequest: on(44) },
                 { body: 'robodoo r+', createdAt: iso(now - day), pullRequest: null },
               ],

@@ -250,7 +250,7 @@ export async function readReviewRequests(
   const left = complete ? previous.filter((pr) => !asked.has(pr.pr)).map((pr) => pr.pr) : [];
   const kept = followed.filter((pr) => !asked.has(pr.pr) && !left.includes(pr.pr) && now - rplusBy(pr, login) < 30 * 86400);
   // The r+ given unasked, in my comments and reviews since the last reading: GitHub's search finds my comments late, or not at
-  // all. Merged, a PR waits on Moi for its forward-ports.
+  // all. Closed by the mergebot as it merges, a PR waits on Moi for its forward-ports.
   const floor = Math.max(now - 30 * 86400, since - 3600);
   const pull = 'pullRequest { number state repository { nameWithOwner } }';
   const said: [Data | undefined, Data | undefined][] = [];
@@ -287,11 +287,7 @@ export async function readReviewRequests(
     ...new Set(
       said
         .filter(
-          ([comment, pr]) =>
-            (pr?.state === 'OPEN' || pr?.state === 'MERGED') &&
-            comment?.createdAt &&
-            now - isoTs(comment.createdAt) < 30 * 86400 &&
-            mergebotCommand(comment.body, 'r+'),
+          ([comment, pr]) => pr && comment?.createdAt && now - isoTs(comment.createdAt) < 30 * 86400 && mergebotCommand(comment.body, 'r+'),
         )
         .map(([, pr]) => `${pr?.repository.nameWithOwner}#${pr?.number}`),
     ),
