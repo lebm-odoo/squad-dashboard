@@ -252,7 +252,8 @@ export async function readReviewRequests(
   // The r+ given unasked, in my comments and reviews since the last reading: GitHub's search finds my comments late, or not at
   // all. Closed by the mergebot as it merges, a PR waits on Moi for its forward-ports.
   const floor = Math.max(now - 30 * 86400, since - 3600);
-  const pull = 'pullRequest { number state repository { nameWithOwner } }';
+  const prFields = 'number state repository { nameWithOwner }';
+  const pull = `pullRequest { ${prFields} }`;
   const said: [Data | undefined, Data | undefined][] = [];
   const pages: { comments?: string | null; reviews?: string | null } = {};
   // The next page of a list, while it goes back past the floor; null once read.
@@ -281,6 +282,20 @@ export async function readReviewRequests(
     );
     if (pages.comments !== null) pages.comments = next(comments, (comment) => comment.updatedAt);
     if (pages.reviews !== null) pages.reviews = next(reviews, (review) => review.occurredAt);
+  }
+  // My reviews in private repositories are missing from my contributions: the search lists the PRs I reviewed since, with them.
+  const reviewedSince = `type:pr reviewed-by:${login} updated:>=${new Date(floor * 1000).toISOString().slice(0, 19)}Z`;
+  let after: string | null = null;
+  for (let i = 0; i < 4 && !gh.stopped; i++) {
+    const data = await gh.query(
+      `query { rateLimit { cost remaining resetAt } s: search(query: "${reviewedSince}", type: ISSUE, first: 50${after ? `, after: "${after}"` : ''}) { ` +
+        `pageInfo { hasNextPage endCursor } nodes { ... on PullRequest { ${prFields} reviews(last: 20, author: "${login}") { nodes { body createdAt } } } } } }`,
+      { searches: 1 },
+    );
+    if (!data?.s) break;
+    for (const pr of (data.s.nodes ?? []) as Data[]) for (const review of (pr?.reviews?.nodes ?? []) as Data[]) said.push([review, pr]);
+    after = data.s.pageInfo.hasNextPage && safe(data.s.pageInfo.endCursor) ? data.s.pageInfo.endCursor : null;
+    if (!after) break;
   }
   const tracked = new Set([...asked, ...left, ...kept.map((pr) => pr.pr)]);
   const unasked = [
@@ -354,8 +369,6 @@ export async function readReviewRequests(
     complete,
     teams: [...(myTeams ?? [])].sort(),
     colleagues: [...new Set(colleagues)].sort(),
-    /** How far back my comments and reviews were read. */
-    comments_from: floor,
     v: 2,
   };
 }

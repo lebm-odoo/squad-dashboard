@@ -409,7 +409,7 @@ describe('GitHub', () => {
     ]);
   });
 
-  test('a PR given my r+ unasked is found in my last comments and reviews, open or closed by the mergebot, within the month', async () => {
+  test('a PR given my r+ unasked is found in my comments, my reviews and the search of what I reviewed, within the month', async () => {
     const day = 86400;
     const now = Date.parse('2026-10-17T09:00:00Z') / 1000;
     const iso = (at: number) => new Date(at * 1000).toISOString();
@@ -434,6 +434,13 @@ describe('GitHub', () => {
             },
           },
         };
+      }
+      if (query.includes('reviewed-by:bob-odoo')) {
+        const pr = (number: number, body: string) => ({
+          ...on(number, 'CLOSED'),
+          reviews: { nodes: [{ body, createdAt: iso(now - day) }] },
+        });
+        return { s: { pageInfo: { hasNextPage: false }, nodes: [pr(45, 'robodoo r+'), pr(46, 'looks good')] } };
       }
       if (query.includes('search(')) {
         return { org: { teams: { nodes: [] } }, s: { issueCount: 0, pageInfo: { hasNextPage: false, endCursor: null }, nodes: [] } };
@@ -463,12 +470,13 @@ describe('GitHub', () => {
       );
     });
     const read = await readReviewRequests(gh, 'bob-odoo', now);
-    for (const number of [40, 42, 43]) expect(queries.at(-1)).toContain(`pullRequest(number: ${number})`);
-    for (const number of [41, 44]) expect(queries.at(-1)).not.toContain(`pullRequest(number: ${number})`);
+    for (const number of [40, 42, 43, 45]) expect(queries.at(-1)).toContain(`pullRequest(number: ${number})`);
+    for (const number of [41, 44, 46]) expect(queries.at(-1)).not.toContain(`pullRequest(number: ${number})`);
     expect(read?.followed.map((pr) => [pr.pr, pr.asked_at, rplusBy(pr, 'bob-odoo')])).toEqual([
       ['odoo/odoo#40', null, now - day],
       ['odoo/odoo#43', null, now - day],
       ['odoo/odoo#42', null, now - day],
+      ['odoo/odoo#45', null, now - day],
     ]);
   });
 

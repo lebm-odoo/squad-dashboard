@@ -75,15 +75,16 @@ export async function githubRequests(ctx: GithubContext, logins: Record<string, 
     v?: number;
     login?: string;
     at?: number;
-    comments_from?: number;
+    lookback?: number;
     prs?: RequestedPr[];
     followed?: RequestedPr[];
   }>(ctx.db, 'github', 'requests');
   const kept = previous?.v === 2 && previous.login === asked ? previous : {};
-  // A reading that did not go back through my comments yet goes back a month.
-  const since = kept.comments_from === undefined ? 0 : kept.at;
+  // How my r+ given unasked are searched: a reading made another way goes back a month once. 2: the search of what I reviewed.
+  const lookback = 2;
+  const since = kept.lookback === lookback ? kept.at : 0;
   const requests = asked ? await readReviewRequests(ctx.gh, asked, ctx.now, kept.prs, kept.followed, since) : null;
-  if (requests) await saveCursor(ctx.db, 'github', 'requests', requests);
+  if (requests) await saveCursor(ctx.db, 'github', 'requests', { ...requests, lookback });
 }
 
 /**
