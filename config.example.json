@@ -1,6 +1,7 @@
 {
-  "lead": "abcd",
-  "members": ["efgh", "ijkl", "mnop"],
-  "github_logins": {"efgh": "efgh-odoo"},
-  "arrivals": {"ijkl": "2025-09"}
+  "me": "abcd",
+  "follow": "squad",
+  "squad": { "lead": "abcd", "members": ["efgh", "ijkl", "mnop"] },
+  "github_logins": { "efgh": "efgh-odoo" },
+  "arrivals": { "ijkl": "2025-09" }
 }

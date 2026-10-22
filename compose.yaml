@@ -1,0 +1,60 @@
+name: squad-dashboard
+
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: squad_dashboard
+      POSTGRES_USER: squad_dashboard
+      POSTGRES_PASSWORD: ${SD_DB_PASSWORD:-squad_dashboard}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    networks: [internal]
+    healthcheck:
+      # Over TCP: on first start, the image runs a socket-only server for initdb, then restarts the real one.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U squad_dashboard -d squad_dashboard"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  app:
+    build:
+      context: .
+      args:
+        COMMIT: ${SD_COMMIT:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://squad_dashboard:${SD_DB_PASSWORD:-squad_dashboard}@db:5432/squad_dashboard
+      PUBLIC_URL: http://localhost:${SD_PORT:-8766}/
+      CLONES_DIR: /clones
+      # Days are counted on the office clock, not UTC.
+      TZ: ${TZ:-Europe/Brussels}
+    # Published on this machine only: the dashboard holds nominative data.
+    ports:
+      - 127.0.0.1:${SD_PORT:-8766}:8766
+    volumes:
+      - data:/data
+      # The odoo, enterprise and upgrade clones alone, written by the fetch: nothing else of their folder is reachable. Not
+      # relabelled for SELinux: relabelling would walk millions of files of working clones; the container reads them
+      # unconfined instead.
+      - { type: bind, source: "${SD_CLONES:-..}/odoo", target: /clones/odoo, bind: { create_host_path: false } }
+      - { type: bind, source: "${SD_CLONES:-..}/enterprise", target: /clones/enterprise, bind: { create_host_path: false } }
+      - { type: bind, source: "${SD_CLONES:-..}/upgrade", target: /clones/upgrade, bind: { create_host_path: false } }
+    # The server needs no privilege: it listens above port 1024 and runs as the image's user.
+    cap_drop: [ALL]
+    security_opt:
+      - label=disable
+      - no-new-privileges:true
+    networks: [internal, outside]
+
+volumes:
+  pgdata:
+  data:
+
+networks:
+  # The database is reachable by the app alone, never from the host or the internet.
+  internal:
+    internal: true
+  outside:

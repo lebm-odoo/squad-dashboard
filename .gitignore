@@ -5,6 +5,13 @@ history.json.bak
 data.json
 data.js
 todos.json
+odoo-explore.json
 *.tmp
+node_modules/
+.svelte-kit/
+apps/web/build/
+.env
+data/
 __pycache__/
 .claude/
+backups/
