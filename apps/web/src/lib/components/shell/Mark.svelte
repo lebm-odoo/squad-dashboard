@@ -37,6 +37,10 @@ const id = $props.id();
 </svg>
 
 <style>
+  /* The tile overshoots as it pops in: cut at the edges of its box, it showed flat sides. */
+  .mark {
+    overflow: visible;
+  }
   .tile {
     transform-box: fill-box;
     transform-origin: center;
