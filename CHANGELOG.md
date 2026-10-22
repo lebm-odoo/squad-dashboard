@@ -28,6 +28,7 @@ version's.
 - A review asked of me can be set aside; asked of me directly, I am taken off its reviewers on GitHub. One I gave the r+ to
   stays on Me until the mergebot merged and ported it, and comes back when a push, an r- or a conflict undoes the r+.
 - A review asked by a colleague, my squad or the members of my GitHub teams, is set aside: its task and the pipe follow it.
+- A reviewer outside the squad is named by their trigram, read from the r+ they gave, rather than by their GitHub login.
 - Settings: who I am and my squad, the GitHub logins and the months of arrival, the connections, the collection, the
   display, the data and the version.
 - French and English, light and dark theme, a search of pages, people and features (Ctrl K).

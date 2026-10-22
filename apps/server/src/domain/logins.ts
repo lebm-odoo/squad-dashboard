@@ -1,5 +1,5 @@
 import { ownerOf } from './branches';
-import { isBot } from './messages';
+import { isBot, trigramOf } from './messages';
 import { mostCommon } from './py';
 
 export type LoginSource = 'config' | 'branches' | 'pr' | 'viewer';
@@ -48,6 +48,28 @@ export function githubLoginSources(input: {
   }
   for (const [member, login] of Object.entries(input.forced)) if (login) logins.set(member, [login, 'config']);
   return logins;
+}
+
+/**
+ * The trigram behind the GitHub login of a reviewer nobody listed: on a merged PR the mergebot signed off for one reviewer
+ * alone, the login that wrote its one `robodoo r+`. Each login goes to the trigram it came with most often.
+ */
+export function rplusLogins(
+  merged: { closes: [string, string][]; reviewers: string[] }[],
+  rplus: Record<string, { r: [string, number][] } | undefined>,
+) {
+  const votes = new Map<string, Map<string, number>>();
+  for (const commit of merged) {
+    const [signer, ...others] = new Set(commit.reviewers.map(trigramOf));
+    if (!signer || others.length || !/^[a-z]{2,8}$/.test(signer)) continue;
+    for (const [slug, number] of commit.closes) {
+      const [login, ...more] = new Set((rplus[`${slug}#${number}`]?.r ?? []).map(([who]) => who.toLowerCase()));
+      if (!login || more.length || isBot(login)) continue;
+      const counter = votes.get(login) ?? new Map<string, number>();
+      votes.set(login, counter.set(signer, (counter.get(signer) ?? 0) + 1));
+    }
+  }
+  return new Map([...votes].map(([login, counter]) => [login, mostCommon(counter)[0]?.[0] as string]));
 }
 
 /** For the settings: each member's login, where it comes from, the one forced, and a guess set aside as invalid. */

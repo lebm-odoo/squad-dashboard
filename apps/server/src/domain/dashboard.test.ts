@@ -159,3 +159,26 @@ test('a review asked by a colleague is told apart: my squad, the members of my G
   ]);
   expect(review_requests).not.toHaveProperty('colleagues');
 });
+
+test('a reviewer nobody listed is known by their r+: the one login that gave it, the one trigram the mergebot signed off', () => {
+  const signed = (number: number, reviewers: string[]) => ({ ...merged(number, 'saas-19.3'), reviewers });
+  const { logins, review_requests } = deriveDashboard(
+    inputOf({
+      merged: [signed(1, ['Yannick Tivisse (yti)']), signed(2, ['Yannick Tivisse (yti)']), signed(3, ['Ann (ann)', 'Bob (bob)'])],
+      rplus: {
+        'odoo/enterprise#1': { r: [['tivisse', 2000]] },
+        'odoo/enterprise#2': { r: [['tivisse', 2001]] },
+        'odoo/enterprise#3': { r: [['ann-gh', 2002]] },
+      },
+      requests: {
+        v: 2,
+        login: 'lebm-odoo',
+        colleagues: ['tivisse'],
+        prs: [{ pr: 'odoo/odoo#9', author: 'jugj-odoo', asked_at: 1, reviews: [['tivisse', 'APPROVED', 5]], rplus: [] }],
+      },
+    }),
+  );
+  expect(logins).toMatchObject({ yti: 'tivisse' });
+  expect(logins).not.toHaveProperty('ann');
+  expect(review_requests?.prs[0]?.validations).toEqual([['yti', 'APPROVED', 5]]);
+});

@@ -10,7 +10,7 @@ import {
   type RunbotBundle,
 } from './features';
 import { featureGroups, type GhReview, type MemberCommit, type MemberRplus, writersOf } from './groups';
-import { githubLoginSources } from './logins';
+import { githubLoginSources, rplusLogins } from './logins';
 import { featureRplus, type RplusStore, requestsReport, reviewRows, rplusAt, type TrailerReview } from './reviews';
 
 /** The facts the dashboard is computed from, whatever stores them: the V1 archive, or the database. */
@@ -93,7 +93,9 @@ export function deriveDashboard(input: DashboardInput) {
     deduced: input.deducedLogins,
     forced: input.forcedLogins,
   });
-  const loginNames = Object.fromEntries([...logins].map(([member, [login]]) => [login.toLowerCase(), member]));
+  // The reviewers of others read whole get their trigram from their r+, members keep theirs.
+  const paired = [...rplusLogins(input.merged, input.rplus)].filter(([, trigram]) => !logins.has(trigram));
+  const loginNames = Object.fromEntries([...paired, ...[...logins].map(([member, [login]]) => [login.toLowerCase(), member])]);
   const sources: FeatureSources = { ...input, prs, loginNames };
   const nameOf = (login: string | null) => loginName(sources, login);
   const datedRplus = (reviewer: string, prs: string[], merged: number) => rplusAt(input.rplus, nameOf, reviewer, prs, merged);
@@ -126,7 +128,10 @@ export function deriveDashboard(input: DashboardInput) {
     features,
     reviews,
     review_requests: requestsReport(input.requests, input.squad, nameOf),
-    logins: Object.fromEntries([...logins].map(([member, [login]]) => [member, login])),
+    logins: Object.fromEntries([
+      ...paired.map(([login, trigram]) => [trigram, login]),
+      ...[...logins].map(([member, [login]]) => [member, login]),
+    ]),
     login_sources: Object.fromEntries(logins),
     history_since: dated.length ? Math.min(...dated) : null,
     archive: { features: keptFeatures, reviews: Object.fromEntries(stored) },
