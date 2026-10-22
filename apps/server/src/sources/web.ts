@@ -52,7 +52,7 @@ export type MergebotRecord = {
   merged_by?: string | null;
   ci?: Record<string, string>;
   review?: string | null;
-  linked?: { branch: string; repo: string; number: number; state: string }[];
+  linked?: { branch: string; repo: string; number: number; state: string; merged_at?: number }[];
   desc_words?: number;
   tasks?: string[];
   opws?: string[];
@@ -74,16 +74,19 @@ export function parseMergebot(page: string, repo: string, number: number, fetche
   const linked: NonNullable<MergebotRecord['linked']> = [];
   for (const [, row] of main.matchAll(/<tr class="[^"]*">([\s\S]*?)<\/tr>/g)) {
     const branch = new RegExp(`<td>((?:${w}|[.\\-])+)</td>`, 'u').exec(row as string);
+    // A detached forward-port's cell has its title before its class.
     const cells = new RegExp(
-      `<td class="([^"]*)">${re.space}*<span title="([^"]*)"[^>]*>${re.space}*<a href="/(odoo/(?:${w}|-)+)/pull/(${re.digit}+)"`,
+      `<td(?: [^>]*?)? class="([^"]*)"[^>]*>${re.space}*<span title="([^"]*)"[^>]*>${re.space}*<a href="/(odoo/(?:${w}|-)+)/pull/(${re.digit}+)"`,
       'gu',
     );
     for (const [, cellClass, spanTitle, linkedRepo, linkedNumber] of (row as string).matchAll(cells)) {
+      const mergedAt = /^merged at (.+)$/.exec(spanTitle as string);
       linked.push({
         branch: branch ? (branch[1] as string) : '',
         repo: linkedRepo as string,
         number: Number(linkedNumber),
         state: (cellClass as string).includes('table-success') ? 'merged' : spanTitle === 'closed' ? 'closed' : 'open',
+        ...(mergedAt && { merged_at: utcTs(mergedAt[1] as string) }),
       });
     }
   }
@@ -124,14 +127,15 @@ export function parseMergebot(page: string, repo: string, number: number, fetche
 
 /**
  * A PR's mergebot page, read again only while it can change: an open PR after 5 minutes, a merged one whose forward-ports
- * are still open hourly for 30 days, or once more if it was read in the hour of its merge, before mergebot opened them. A PR
- * mergebot does not know is kept as missing.
+ * are still open hourly for 30 days, or once more if it was read in the hour of the last merge of its chain, before mergebot
+ * opened the next port. A PR mergebot does not know is kept as missing.
  */
 export async function readMergebot(repo: string, number: number, cached: MergebotRecord | undefined, now: number, fetcher = fetch) {
   if (cached && now - cached.fetched < 300) return cached;
+  const lastMerge = Math.max(cached?.merged_at ?? 0, ...(cached?.linked ?? []).map((link) => link.merged_at ?? 0));
   const portsMoving =
     cached?.state === 'merged' &&
-    ((cached.linked ?? []).some((link) => link.state === 'open') || cached.fetched - (cached.merged_at ?? 0) < 3600) &&
+    ((cached.linked ?? []).some((link) => link.state === 'open') || cached.fetched - lastMerge < 3600) &&
     now - (cached.merged_at ?? 0) < 30 * 86400 &&
     now - cached.fetched > 3600;
   if (cached && ['merged', 'closed', 'missing'].includes(cached.state) && !portsMoving) return cached;

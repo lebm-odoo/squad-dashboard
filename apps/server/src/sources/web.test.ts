@@ -21,8 +21,14 @@ describe.skipIf(!existsSync(pages))('pages read as the V1 read them', () => {
         expected[key]?.state === 'missing'
           ? { repo, number: Number(number), state: 'missing', fetched: 0 }
           : parseMergebot(await read(name), repo, Number(number), 0);
+      // The V1 missed the cells of detached forward-ports, their title before their class, and kept no merge date per cell.
+      const page = await read(name);
+      const detached = new Set(
+        [...page.matchAll(/title="detached"[^>]*>\s*<span[^>]*>\s*<a href="\/[^"]+\/pull\/(\d+)"/g)].map((match) => Number(match[1])),
+      );
       const { fetched, ...rest } = parsed;
-      expect([key, rest]).toEqual([key, expected[key] as never]);
+      const linked = rest.linked?.filter((link) => !detached.has(link.number)).map(({ merged_at, ...link }) => link);
+      expect([key, { ...rest, ...(linked && { linked }) }]).toEqual([key, expected[key] as never]);
     }
   });
 
@@ -32,6 +38,19 @@ describe.skipIf(!existsSync(pages))('pages read as the V1 read them', () => {
     const parsed = parseRunbot(await read('rb-lebm.html'), (name) => ownerOf(name, names) === 'lebm');
     expect(JSON.parse(JSON.stringify(parsed))).toEqual(await Bun.file(resolve(pages, 'runbot.json')).json());
   });
+});
+
+test('the forward-ports table holds the detached ports, and when each port merged', () => {
+  const merged = (number: number, at: string) =>
+    `<td class="table-success"> <span title="merged at ${at}"> <a href="/odoo/odoo/pull/${number}">#${number}</a> </span> </td>`;
+  const detached =
+    '<td title="detached" class="detached table-warning"> <span title="validated, is not ready"> <a href="/odoo/odoo/pull/3">#3</a> <sup class="text-danger">missing r+</sup> </span> </td>';
+  const page = `<h6>x</h6><table><tr class="bg-info "><td>19.0</td>${merged(1, '2026-10-20 18:30:12')}</tr><tr class=" "><td>saas-19.4</td>${merged(2, '2026-10-22 09:03:51')}</tr><tr class=" "><td>20.0</td>${detached}</tr><tr class=" "><td>master</td><td></td></tr></table>`;
+  expect(parseMergebot(page, 'odoo/odoo', 1, 0).linked).toEqual([
+    { branch: '19.0', repo: 'odoo/odoo', number: 1, state: 'merged', merged_at: Date.parse('2026-10-20T18:30:12Z') / 1000 },
+    { branch: 'saas-19.4', repo: 'odoo/odoo', number: 2, state: 'merged', merged_at: Date.parse('2026-10-22T09:03:51Z') / 1000 },
+    { branch: '20.0', repo: 'odoo/odoo', number: 3, state: 'open' },
+  ]);
 });
 
 test("a PR's r+ is read in its own cell, not in its forward-ports'", () => {
@@ -56,6 +75,18 @@ describe('mergebot pages read again only while they can change', () => {
     const page = new Response('<h6>x</h6><div class="alert alert-success">Merged</div>');
     const read = await readMergebot('odoo/odoo', 1, moving, 10_000, (async () => page) as unknown as typeof fetch);
     expect(read).toMatchObject({ state: 'merged', fetched: 10_000 });
+  });
+
+  test('a merged PR read as a port of its chain merged is read once more, for the port mergebot opened after', async () => {
+    const chain = {
+      ...merged,
+      fetched: 6000,
+      linked: [{ branch: '18.0', repo: 'odoo/odoo', number: 2, state: 'merged', merged_at: 5500 }],
+    };
+    const page = new Response('<h6>x</h6><div class="alert alert-success">Merged</div>');
+    const read = await readMergebot('odoo/odoo', 1, chain, 10_000, (async () => page) as unknown as typeof fetch);
+    expect(read).toMatchObject({ state: 'merged', fetched: 10_000 });
+    expect(await readMergebot('odoo/odoo', 1, { ...chain, fetched: 9200 }, 20_000, never)).toMatchObject({ fetched: 9200 });
   });
 
   test('a merged PR read as it merged is read once more, for the forward-ports mergebot opened after', async () => {
