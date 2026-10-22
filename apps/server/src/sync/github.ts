@@ -71,13 +71,18 @@ export async function githubLogins(ctx: GithubContext) {
 export async function githubRequests(ctx: GithubContext, logins: Record<string, string>) {
   ctx.step?.('github : reviews demandées');
   const asked = logins[ctx.lead ?? ctx.me];
-  const previous = await loadCursor<{ v?: number; login?: string; prs?: RequestedPr[]; followed?: RequestedPr[] }>(
-    ctx.db,
-    'github',
-    'requests',
-  );
+  const previous = await loadCursor<{
+    v?: number;
+    login?: string;
+    at?: number;
+    comments_from?: number;
+    prs?: RequestedPr[];
+    followed?: RequestedPr[];
+  }>(ctx.db, 'github', 'requests');
   const kept = previous?.v === 2 && previous.login === asked ? previous : {};
-  const requests = asked ? await readReviewRequests(ctx.gh, asked, ctx.now, kept.prs, kept.followed) : null;
+  // A reading that did not go back through my comments yet goes back a month.
+  const since = kept.comments_from === undefined ? 0 : kept.at;
+  const requests = asked ? await readReviewRequests(ctx.gh, asked, ctx.now, kept.prs, kept.followed, since) : null;
   if (requests) await saveCursor(ctx.db, 'github', 'requests', requests);
 }
 

@@ -409,7 +409,7 @@ describe('GitHub', () => {
     ]);
   });
 
-  test('a PR given my r+ unasked is found in my last comments and reviews, open and within the month', async () => {
+  test('a PR given my r+ unasked is found in my last comments and reviews, open or merged, within the month', async () => {
     const day = 86400;
     const now = Date.parse('2026-10-17T09:00:00Z') / 1000;
     const iso = (at: number) => new Date(at * 1000).toISOString();
@@ -463,13 +463,50 @@ describe('GitHub', () => {
       );
     });
     const read = await readReviewRequests(gh, 'bob-odoo', now);
-    expect(queries.at(-1)).toContain('pullRequest(number: 40)');
-    expect(queries.at(-1)).toContain('pullRequest(number: 42)');
-    for (const number of [41, 43, 44]) expect(queries.at(-1)).not.toContain(`pullRequest(number: ${number})`);
+    for (const number of [40, 42, 43]) expect(queries.at(-1)).toContain(`pullRequest(number: ${number})`);
+    for (const number of [41, 44]) expect(queries.at(-1)).not.toContain(`pullRequest(number: ${number})`);
     expect(read?.followed.map((pr) => [pr.pr, pr.asked_at, rplusBy(pr, 'bob-odoo')])).toEqual([
       ['odoo/odoo#40', null, now - day],
+      ['odoo/odoo#43', null, now - day],
       ['odoo/odoo#42', null, now - day],
     ]);
+  });
+
+  test('my comments are read back to the last reading, a month the first time', async () => {
+    const day = 86400;
+    const now = Date.parse('2026-10-17T09:00:00Z') / 1000;
+    const iso = (at: number) => new Date(at * 1000).toISOString();
+    const comment = (number: number, at: number, body = 'nice') => ({
+      body,
+      createdAt: iso(at),
+      updatedAt: iso(at),
+      pullRequest: { number, state: 'MERGED', repository: { nameWithOwner: 'odoo/odoo' } },
+    });
+    const { gh, queries } = server((query) => {
+      if (query.includes('issueComments') || query.includes('contributionsCollection')) {
+        const second = query.includes('after: "page2"');
+        return {
+          user: {
+            issueComments: second
+              ? { pageInfo: { hasNextPage: false, endCursor: null }, nodes: [comment(45, now - 3 * day, 'robodoo r+')] }
+              : { pageInfo: { hasNextPage: true, endCursor: 'page2' }, nodes: [comment(46, now - 3600), comment(47, now - 2 * day)] },
+            contributionsCollection: { pullRequestReviewContributions: { pageInfo: { hasNextPage: false }, nodes: [] } },
+          },
+        };
+      }
+      if (query.includes('search(')) {
+        return { org: { teams: { nodes: [] } }, s: { issueCount: 0, pageInfo: { hasNextPage: false, endCursor: null }, nodes: [] } };
+      }
+      return {};
+    });
+    await readReviewRequests(gh, 'bob-odoo', now, [], [], now - 600);
+    expect(queries.filter((query) => query.includes('issueComments'))).toHaveLength(1);
+    await readReviewRequests(gh, 'bob-odoo', now);
+    const pages = queries.filter((query) => query.includes('issueComments'));
+    expect(pages).toHaveLength(3);
+    expect(pages.at(-1)).toContain('after: "page2"');
+    expect(pages.at(-1)).not.toContain('contributionsCollection');
+    expect(queries.at(-1)).toContain('pullRequest(number: 45)');
   });
 
   test('when each PR last changed, many in a query; a PR GitHub has not is left out', async () => {

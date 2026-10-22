@@ -149,6 +149,8 @@ export async function readReviewRequests(
   now: number,
   previous: RequestedPr[] = [],
   followed: RequestedPr[] = [],
+  /** When the last reading was: my comments and reviews are read back to it, a month at most the first time. */
+  since = 0,
   limit = 300,
 ) {
   if (!/^[A-Za-z0-9-]+$/.test(login)) return null;
@@ -247,28 +249,51 @@ export async function readReviewRequests(
   const asked = new Set(listed.map(([key]) => key));
   const left = complete ? previous.filter((pr) => !asked.has(pr.pr)).map((pr) => pr.pr) : [];
   const kept = followed.filter((pr) => !asked.has(pr.pr) && !left.includes(pr.pr) && now - rplusBy(pr, login) < 30 * 86400);
-  // The r+ given unasked, in my last comments and reviews: GitHub's search finds my comments late, or not at all.
+  // The r+ given unasked, in my comments and reviews since the last reading: GitHub's search finds my comments late, or not at
+  // all. Merged, a PR waits on Moi for its forward-ports.
+  const floor = Math.max(now - 30 * 86400, since - 3600);
   const pull = 'pullRequest { number state repository { nameWithOwner } }';
-  const recent = await gh.query(
-    `query { rateLimit { cost remaining resetAt } user(login: "${login}") { ` +
-      `issueComments(first: 100, orderBy: { field: UPDATED_AT, direction: DESC }) { nodes { body createdAt ${pull} } } ` +
-      `contributionsCollection { pullRequestReviewContributions(first: 50, orderBy: { direction: DESC }) { nodes { pullRequestReview { body createdAt } ${pull} } } } } }`,
-  );
+  const said: [Data | undefined, Data | undefined][] = [];
+  const pages: { comments?: string | null; reviews?: string | null } = {};
+  // The next page of a list, while it goes back past the floor; null once read.
+  const next = (list: Data | undefined, at: (node: Data) => string | undefined) => {
+    const last = (list?.nodes as Data[] | undefined)?.at(-1);
+    const old = !last || isoTs(at(last) ?? '1970-01-01T00:00:00Z') < floor;
+    return list?.pageInfo?.hasNextPage && !old && safe(list.pageInfo.endCursor) ? (list.pageInfo.endCursor as string) : null;
+  };
+  for (let i = 0; i < 10 && (pages.comments !== null || pages.reviews !== null) && !gh.stopped; i++) {
+    const after = (cursor: string | null | undefined) => (cursor ? `, after: "${cursor}"` : '');
+    const fields = [
+      pages.comments !== null
+        ? `issueComments(first: 100, orderBy: { field: UPDATED_AT, direction: DESC }${after(pages.comments)}) { pageInfo { hasNextPage endCursor } nodes { body createdAt updatedAt ${pull} } } `
+        : '',
+      pages.reviews !== null
+        ? `contributionsCollection { pullRequestReviewContributions(first: 100, orderBy: { direction: DESC }${after(pages.reviews)}) { pageInfo { hasNextPage endCursor } nodes { occurredAt pullRequestReview { body createdAt } ${pull} } } }`
+        : '',
+    ];
+    const data = await gh.query(`query { rateLimit { cost remaining resetAt } user(login: "${login}") { ${fields.join('')} } }`);
+    if (!data?.user) break;
+    const comments: Data | undefined = data.user.issueComments;
+    const reviews: Data | undefined = data.user.contributionsCollection?.pullRequestReviewContributions;
+    said.push(
+      ...((comments?.nodes ?? []) as Data[]).map((comment): [Data, Data] => [comment, comment?.pullRequest]),
+      ...((reviews?.nodes ?? []) as Data[]).map((review): [Data, Data] => [review?.pullRequestReview, review?.pullRequest]),
+    );
+    if (pages.comments !== null) pages.comments = next(comments, (comment) => comment.updatedAt);
+    if (pages.reviews !== null) pages.reviews = next(reviews, (review) => review.occurredAt);
+  }
   const tracked = new Set([...asked, ...left, ...kept.map((pr) => pr.pr)]);
   const unasked = [
     ...new Set(
-      [
-        ...((recent?.user?.issueComments?.nodes ?? []) as Data[]).map((comment) => [comment, comment?.pullRequest]),
-        ...((recent?.user?.contributionsCollection?.pullRequestReviewContributions?.nodes ?? []) as Data[]).map((review) => [
-          review?.pullRequestReview,
-          review?.pullRequest,
-        ]),
-      ]
+      said
         .filter(
-          ([said, pr]) =>
-            pr?.state === 'OPEN' && said?.createdAt && now - isoTs(said.createdAt) < 30 * 86400 && mergebotCommand(said.body, 'r+'),
+          ([comment, pr]) =>
+            (pr?.state === 'OPEN' || pr?.state === 'MERGED') &&
+            comment?.createdAt &&
+            now - isoTs(comment.createdAt) < 30 * 86400 &&
+            mergebotCommand(comment.body, 'r+'),
         )
-        .map(([, pr]) => `${pr.repository.nameWithOwner}#${pr.number}`),
+        .map(([, pr]) => `${pr?.repository.nameWithOwner}#${pr?.number}`),
     ),
   ].filter((key) => !tracked.has(key));
   // Given my r+, a PR goes on without asking me: GitHub says when it changed, to read it again, and whether it still merges,
@@ -333,6 +358,8 @@ export async function readReviewRequests(
     complete,
     teams: [...(myTeams ?? [])].sort(),
     colleagues: [...new Set(colleagues)].sort(),
+    /** How far back my comments and reviews were read. */
+    comments_from: floor,
     v: 2,
   };
 }
