@@ -57,6 +57,26 @@ describe('Odoo', () => {
     expect(read.notFound).toEqual(['9']);
   });
 
+  test('tober+ is dated by the reading that saw it come, unknown when there at the first one', async () => {
+    const { odoo } = odooServer((model, method) => {
+      if (method === 'fields_get') return { name: {}, state: {}, user_ids: {}, tag_ids: {} };
+      if (model === 'res.users') return [{ id: 11, name: 'Anne (anne)', login: 'anne@odoo.com' }];
+      if (model === 'project.task')
+        return [7, 8, 9].map((id) => ({ id, name: 'A task', state: '01_in_progress', user_ids: [11], tag_ids: [5] }));
+      if (model === 'project.tags') return [{ id: 5, name: 'tober+ ' }];
+      return [];
+    });
+    const read = await readTasks(odoo, {
+      squad: ['anne'],
+      lead: null,
+      named: [],
+      history: {},
+      previous: { 7: { tags: [], validated_at: null }, 8: { tags: ['tober+'], validated_at: 50 } },
+      now: 1000,
+    });
+    expect([7, 8, 9].map((id) => read.tasks[id]?.validated_at)).toEqual([1000, 50, null]);
+  });
+
   test('a task kept open that the squad no longer has is read again by its id: given to someone else, it is no longer ours', async () => {
     const byId: unknown[] = [];
     const { odoo } = odooServer((model, method, params) => {

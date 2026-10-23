@@ -13,7 +13,8 @@ const en = {
     'Reads again the reviews GitHub asks of you, the Odoo tasks and the PRs of your desk that moved, as the page does on its own every 5 minutes while in sight. Update reads everything.',
   kpi: {
     now: 'Waiting for me',
-    nowHint: (reviews: number, code: number) => `${plEn(reviews, 'review')} · ${code} on my code`,
+    nowHint: (reviews: number, validations: number, code: number) =>
+      [plEn(reviews, 'review'), ...(validations ? [plEn(validations, 'validation')] : []), `${code} on my code`].join(' · '),
     doing: 'In progress',
     doingHint: 'branches, drafts, tasks without a PR',
     waiting: 'Waiting on others',
@@ -23,17 +24,17 @@ const en = {
     over: (when: string) => `over the last ${when}`,
   },
   work: 'Right now',
-  sides: { all: 'All', write: 'My code', review: 'My reviews' } as Record<string, string>,
+  sides: { all: 'All', write: 'My code', review: 'My reviews', validate: 'My validations' } as Record<string, string>,
   search: 'Filter: title, PR, task…',
   lanes: {
     now: [
       'Waiting for me',
-      'What needs a move from you: changes asked on your code, CI, blocked merges and ports, reviews to give or to give again, those you approved that a push, an r- or a conflict keeps from merging, tasks to move to Deployed. The most pressing first, then the oldest.',
+      'What needs a move from you: changes asked on your code, CI, blocked merges and ports, reviews and validations to give or to give again, those you approved that a push, an r- or a conflict keeps from merging, tasks to move to Deployed. The most pressing first, then the oldest.',
     ],
     doing: ['In progress', 'Your branches without a PR, your drafts, your tasks without a PR linked: the most recent first.'],
     waiting: [
       'Waiting on others',
-      'Your PRs waiting for a review, an r+ or the merge, your ports on their way, the tasks you validated waiting for their review, those you approved waiting for their merge: the longest waiting first.',
+      'Your PRs waiting for a review, an r+ or the merge, your ports on their way, the tasks you validated, those to review once validated, those you approved waiting for their merge: the longest waiting first.',
     ],
   } as Record<string, [string, string]>,
   empty: { now: 'Nothing waits for you.', doing: 'Nothing in progress.', waiting: 'Nothing waiting on others.' } as Record<string, string>,
@@ -43,7 +44,7 @@ const en = {
   teams: (teams: string, n: number) => `Asked of ${teams || 'your teams'} · ${n}`,
   teamsHint: 'Code owners: one of you reviews.',
   aside: (n: number) =>
-    `${plEn(n, 'request')} set aside: already r+, validated by a colleague, of tasks you validated, or PRs of colleagues, followed through their tasks.`,
+    `${plEn(n, 'request')} set aside: already r+, validated by a colleague, or PRs of colleagues, followed through their tasks.`,
   discard: 'Set aside',
   discardTitle: (direct: boolean): string =>
     direct
@@ -66,7 +67,7 @@ const en = {
   done: 'Done',
   doneTabs: { merged: 'Merged', reviewed: 'Reviewed' } as Record<string, string>,
   doneEmpty: 'Nothing over this period.',
-  sideTags: { write: 'my code', review: 'review' } as Record<string, string>,
+  sideTags: { write: 'my code', review: 'review', validate: 'validation' } as Record<string, string>,
   why: {
     changes: (who: string) => (who ? `${who} asked for changes` : 'Changes requested'),
     ci: () => 'CI failing',
@@ -77,7 +78,6 @@ const en = {
     fixing: (fresh: string) => (fresh ? 'Changes asked, with the dev · new code since' : 'Changes asked, with the dev'),
     deploy: () => 'Approved and merged: to move to Deployed',
     toReview: () => 'Tested: ready for your review',
-    testing: () => 'To test',
     devAsks: () => 'The dev asks for details',
     toTesting: () => 'Developed: to take into testing',
     spec: () => 'Spec to write',
@@ -90,10 +90,22 @@ const en = {
     merge: () => 'r+ given, on its way to the merge',
     ports: (branches: string) => `Merged, forward-ports ${branches} on their way`,
     task: (stage: string) => `Merged, task still in ${stage}`,
-    validated: (who: string) => `Validated, waiting for ${who ? `${who}’s review` : 'a reviewer'}`,
+    toValidate: () => 'To validate',
+    revalidate: () => 'Pushed since your validation: to validate again',
+    validated: (wait: string) => `Validated, ${wait}`,
+    validating: (who: string) => `Waiting for ${who}’s validation`,
+    reviewValidated: (who: string) => (who ? `Validated by ${who}: to review` : 'Validated: to review'),
+    validationOutdated: (who: string) => `${who}’s validation outdated: pushed since`,
     approved: (wait: string) => `Approved, ${wait}`,
     undone: (what: string) => `Approved, but ${what}`,
   } as Record<string, (detail: string) => string>,
+  validatedWait: {
+    dev: () => 'still in dev',
+    testing: () => 'waiting for its test',
+    review: (who: string) => (who ? `waiting for ${who}’s review` : 'waiting for a reviewer'),
+    changes: () => 'changes asked in review',
+    approved: () => 'approved in review',
+  } as Record<string, (who: string) => string>,
   undone: {
     pushed: () => 'pushed since your r+',
     rminus: (who: string) => `r- by ${who} since your r+`,
@@ -111,6 +123,11 @@ const en = {
   card: {
     roles: { mine: 'My code', asked: 'Asked of me', reviewed: 'My review', reviewer: 'I review it' } as Record<string, string>,
     yourMove: 'Your move',
+    validation: {
+      pending: (who: string) => `Validation: waiting for ${who}`,
+      done: (who: string) => `Validated by ${who}`,
+      outdated: (who: string) => `${who}’s validation outdated: pushed since`,
+    } as Record<string, (who: string) => string>,
     nobody: {
       pick: 'A dev',
       devAsks: 'The PO',
@@ -131,6 +148,7 @@ const en = {
       testing: () => 'Test it',
       testChanges: () => 'Fix what the test found',
       toReview: () => 'Tested: ready for the review',
+      validated: () => 'Validated: waiting for its test',
       waiting: () => 'On hold',
       changes: (who: string) => (who ? `Address the changes ${who} asked for` : 'Address the changes asked on the task'),
       ci: () => 'Fix the CI',
@@ -221,7 +239,8 @@ const fr: typeof en = {
     'Relit les reviews que GitHub te demande, les tâches Odoo et les PR de ton bureau qui ont bougé, comme la page le fait seule toutes les 5 minutes tant qu’elle est visible. Mettre à jour relit tout.',
   kpi: {
     now: 'M’attend',
-    nowHint: (reviews, code) => `${plFr(reviews, 'review')} · ${code} sur mon code`,
+    nowHint: (reviews, validations, code) =>
+      [plFr(reviews, 'review'), ...(validations ? [plFr(validations, 'validation')] : []), `${code} sur mon code`].join(' · '),
     doing: 'En cours',
     doingHint: 'branches, brouillons, tâches sans PR',
     waiting: 'En attente des autres',
@@ -231,17 +250,17 @@ const fr: typeof en = {
     over: (when) => `sur les ${when} passés`,
   },
   work: 'En ce moment',
-  sides: { all: 'Tout', write: 'Mon code', review: 'Mes reviews' },
+  sides: { all: 'Tout', write: 'Mon code', review: 'Mes reviews', validate: 'Mes validations' },
   search: 'Filtrer : titre, PR, tâche…',
   lanes: {
     now: [
       'M’attend',
-      'Ce qui attend un geste de toi : changements demandés sur ton code, CI, merges et ports bloqués, reviews à faire ou à refaire, celles approuvées qu’un push, un r- ou un conflit empêche de merger, tâches à passer en Deployed. Le plus pressant d’abord, puis le plus ancien.',
+      'Ce qui attend un geste de toi : changements demandés sur ton code, CI, merges et ports bloqués, reviews et validations à faire ou à refaire, celles approuvées qu’un push, un r- ou un conflit empêche de merger, tâches à passer en Deployed. Le plus pressant d’abord, puis le plus ancien.',
     ],
     doing: ['En cours', 'Tes branches sans PR, tes brouillons, tes tâches sans PR liée : les plus récentes d’abord.'],
     waiting: [
       'En attente des autres',
-      'Tes PR qui attendent une review, un r+ ou le merge, tes ports en route, les tâches que tu as validées en attente de leur review, celles que tu as approuvées en attente de leur merge : ce qui attend depuis le plus longtemps d’abord.',
+      'Tes PR qui attendent une review, un r+ ou le merge, tes ports en route, les tâches que tu as validées, celles à reviewer une fois validées, celles que tu as approuvées en attente de leur merge : ce qui attend depuis le plus longtemps d’abord.',
     ],
   },
   empty: { now: 'Rien ne t’attend.', doing: 'Rien en cours.', waiting: 'Rien n’attend les autres.' },
@@ -251,7 +270,7 @@ const fr: typeof en = {
   teams: (teams, n) => `Demandées à ${teams || 'tes équipes'} · ${n}`,
   teamsHint: 'Code owners : l’un de vous reviewe.',
   aside: (n) =>
-    `${plFr(n, 'demande')} mise${n > 1 ? 's' : ''} de côté : déjà r+, validée${n > 1 ? 's' : ''} par un collègue, de tâches que tu as validées, ou PR de collègues, suivie${n > 1 ? 's' : ''} par leurs tâches.`,
+    `${plFr(n, 'demande')} mise${n > 1 ? 's' : ''} de côté : déjà r+, validée${n > 1 ? 's' : ''} par un collègue, ou PR de collègues, suivie${n > 1 ? 's' : ''} par leurs tâches.`,
   discard: 'Écarter',
   discardTitle: (direct) =>
     direct
@@ -270,7 +289,7 @@ const fr: typeof en = {
   done: 'Fait',
   doneTabs: { merged: 'Mergé', reviewed: 'Reviewé' },
   doneEmpty: 'Rien sur cette période.',
-  sideTags: { write: 'mon code', review: 'review' },
+  sideTags: { write: 'mon code', review: 'review', validate: 'validation' },
   why: {
     changes: (who) => (who ? `${who} a demandé des changements` : 'Changements demandés'),
     ci: () => 'CI en échec',
@@ -281,7 +300,6 @@ const fr: typeof en = {
     fixing: (fresh) => (fresh ? 'Changements demandés, chez le dev · nouveau code depuis' : 'Changements demandés, chez le dev'),
     deploy: () => 'Approuvée et mergée : à passer en Deployed',
     toReview: () => 'Testée : prête pour ta review',
-    testing: () => 'À tester',
     devAsks: () => 'Le dev demande des précisions',
     toTesting: () => 'Développée : à prendre en test',
     spec: () => 'Spec à rédiger',
@@ -294,9 +312,21 @@ const fr: typeof en = {
     merge: () => 'r+ donné, en route vers le merge',
     ports: (branches) => `Mergée, forward-ports ${branches} en route`,
     task: (stage) => `Mergée, tâche encore en ${stage}`,
-    validated: (who) => `Validée, en attente ${who ? `de la review de ${who}` : 'd’un reviewer'}`,
+    toValidate: () => 'À valider',
+    revalidate: () => 'Poussée depuis ta validation : à revalider',
+    validated: (wait) => `Validée, ${wait}`,
+    validating: (who) => `En attente de la validation de ${who}`,
+    reviewValidated: (who) => (who ? `Validée par ${who} : à reviewer` : 'Validée : à reviewer'),
+    validationOutdated: (who) => `Validation de ${who} dépassée : poussée depuis`,
     approved: (wait) => `Approuvée, ${wait}`,
     undone: (what) => `Approuvée, mais ${what}`,
+  },
+  validatedWait: {
+    dev: () => 'encore en dev',
+    testing: () => 'en attente du test',
+    review: (who) => (who ? `en attente de la review de ${who}` : 'en attente d’un reviewer'),
+    changes: () => 'changements demandés en review',
+    approved: () => 'approuvée en review',
   },
   undone: {
     pushed: () => 'poussée depuis ton r+',
@@ -315,6 +345,11 @@ const fr: typeof en = {
   card: {
     roles: { mine: 'Mon code', asked: 'Demandée à moi', reviewed: 'Ma review', reviewer: 'Je la reviewe' },
     yourMove: 'À toi',
+    validation: {
+      pending: (who) => `Validation : en attente de ${who}`,
+      done: (who) => `Validée par ${who}`,
+      outdated: (who) => `Validation de ${who} dépassée : poussée depuis`,
+    },
     nobody: {
       pick: 'Un dev',
       devAsks: 'Le PO',
@@ -335,6 +370,7 @@ const fr: typeof en = {
       testing: () => 'La tester',
       testChanges: () => 'Corriger ce que le test a relevé',
       toReview: () => 'Testée : prête pour la review',
+      validated: () => 'Validée : en attente du test',
       waiting: () => 'En attente',
       changes: (who) => (who ? `Traiter les changements demandés par ${who}` : 'Traiter les changements demandés sur la tâche'),
       ci: () => 'Réparer la CI',

@@ -96,17 +96,6 @@ describe('a piece of work', () => {
     expect(P.next).toEqual({ key: 'deploy', who: 'ann', detail: '' });
   });
 
-  test('validated by its PO and left in progress, a task in testing is tested: its reviewer’s', () => {
-    const tags = ['validation-cid', 'review-ann', 'tober+'];
-    const board = boardOf('open', { tasks: [{ ...task, id: 8, stage: 'RD Testing BE', state: '01_in_progress', reviewer: null, tags }] });
-    const P = progress(board, unitOf(board, 'task', '8') as NonNullable<ReturnType<typeof unitOf>>);
-    expect(P.steps.slice(0, 2)).toEqual([
-      { key: 'testing', state: 'done' },
-      { key: 'review', state: 'now' },
-    ]);
-    expect(P.next).toMatchObject({ key: 'toReview', who: 'ann' });
-  });
-
   test('a chain stopped before master is done a day after its last merge, mergebot opening the next port up to hours later', () => {
     const stoppedAt20 = (days: number) => {
       const fix = feature('19.0-fix-carl', {
@@ -211,8 +200,7 @@ test('the pipe says whose move a task is', () => {
   expect(turn(at('RD Testing BE', '01_in_progress', ['validation-ann']))).toMatchObject({ key: 'testing', who: 'ann' });
   expect(turn(at('RD Testing BE', '02_changes_requested'))).toMatchObject({ key: 'testChanges', who: 'bob' });
   expect(turn(at('RD Testing BE', '03_approved', ['review-ann']))).toMatchObject({ key: 'toReview', who: 'ann' });
-  const validated = { ...at('RD Testing BE', '01_in_progress', ['validation-ann', 'review-cid', 'tober+']), reviewer: null };
-  expect(turn(validated)).toMatchObject({ key: 'toReview', who: 'cid' });
+  expect(turn(at('RD Testing BE', '01_in_progress', ['validation-ann', 'tober+']))).toMatchObject({ key: 'validated', who: null });
   expect(turn(at('RD Review', '01_in_progress', ['review-ann']))).toMatchObject({ key: 'review', who: 'ann' });
   expect(turn(at('RD Review', '03_approved'))).toBeNull();
 });

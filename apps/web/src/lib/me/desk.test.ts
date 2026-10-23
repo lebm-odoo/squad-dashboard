@@ -208,19 +208,50 @@ describe('my reviews', () => {
     expect([D.now, D.teams, D.aside]).toEqual([[], [], 1]);
   });
 
-  test('a task in testing with me as its PO waits for my test, once tested for its reviewer', () => {
+  test('a task in testing with me as its PO waits for my validation, once approved for its reviewer', () => {
     const testing = { ...task, stage: 'RD Testing BE', state: '01_in_progress', reviewer: null, tags: ['validation-ann'], links: {} };
-    expect(deskOf({ tasks: [testing] }).now).toMatchObject([{ why: 'testing', key: 'task:7' }]);
+    expect(deskOf({ tasks: [testing] }).now).toMatchObject([{ why: 'toValidate', key: 'task:7', side: 'validate' }]);
+    expect(deskOf({ tasks: [{ ...testing, state: '02_changes_requested' }] }).waiting).toMatchObject([{ why: 'fixing', side: 'validate' }]);
     expect(deskOf({ tasks: [{ ...testing, state: '03_approved', tags: ['review-ann'] }] }).now).toMatchObject([{ why: 'toReview' }]);
   });
 
-  test('a task I validated as its PO alone waits for its reviewer, in testing or in review, its request set aside', () => {
-    const testing = { ...task, stage: 'RD Testing BE', reviewer: null, tags: ['validation-ann', 'review-bob', 'tober+'] };
-    const D = deskOf({ tasks: [testing], requests: [request('odoo/odoo#9')] });
-    expect([D.now, D.aside]).toEqual([[], 1]);
-    expect(D.waiting).toMatchObject([{ why: 'validated', key: 'task:7' }]);
-    expect(deskOf({ tasks: [{ ...testing, stage: 'RD Review' }] }).waiting).toMatchObject([{ why: 'validated', key: 'task:7' }]);
-    expect(deskOf({ tasks: [{ ...testing, tags: ['validation-ann', 'review-ann', 'tober+'] }] }).now).toMatchObject([{ why: 'toReview' }]);
+  describe('validation, a column apart from the stages', () => {
+    const code = (pushed: number, approved?: number) =>
+      feature('x', {
+        owner: 'carl',
+        tasks: ['7'],
+        prs: [{ repo: 'odoo/odoo', number: 9, state: 'open', missing_r: true }],
+        pushes: [{ at: pushed, kind: 'push', repo: 'odoo' }],
+        gh: { received: approved ? [{ who: 'bob', state: 'APPROVED', at: approved }] : [] },
+      });
+
+    test('validated (tober+), a task waits on others whatever its stage, its request with it', () => {
+      const testing = { ...task, stage: 'RD Testing BE', reviewer: null, tags: ['validation-ann', 'review-ann', 'tober+'] };
+      const D = deskOf({ tasks: [testing], requests: [request('odoo/odoo#9')] });
+      expect(D.now).toEqual([]);
+      expect(D.waiting).toMatchObject([{ why: 'validated', key: 'task:7', side: 'validate', request: { pr: 'odoo/odoo#9' } }]);
+      const review = { ...testing, stage: 'RD Review', tags: ['validation-ann', 'review-bob', 'tober+'] };
+      expect(deskOf({ tasks: [review] }).waiting).toMatchObject([{ why: 'validated' }]);
+    });
+
+    test('in review, a task waits for its validator, then is mine to review', () => {
+      expect(deskOf({ tasks: [{ ...task, tags: ['validation-bob'] }] }).waiting).toMatchObject([{ why: 'validating', side: 'review' }]);
+      expect(deskOf({ tasks: [{ ...task, tags: ['validation-bob', 'tober+'] }] }).now).toMatchObject([{ why: 'reviewValidated' }]);
+      expect(deskOf({ tasks: [{ ...task, tags: ['validation-ann'] }] }).now).toMatchObject([{ why: 'toValidate', side: 'validate' }]);
+    });
+
+    test('code pushed since the tober+ or the validator’s approval outdates it, for its validator as for its reviewer', () => {
+      const tags = ['validation-bob', 'tober+'];
+      const outdated = (x: Partial<Task>, pushed: number, approved?: number) =>
+        deskOf({ tasks: [{ ...task, tags, ...x }], features: [code(pushed, approved)] }).now.map((y) => y.why);
+      expect(outdated({ validated_at: ago(3) }, ago(1))).toEqual(['validationOutdated']);
+      expect(outdated({ validated_at: ago(3) }, ago(4))).toEqual(['reviewValidated']);
+      expect(outdated({}, ago(1), ago(2))).toEqual(['validationOutdated']);
+      expect(outdated({ validated_at: ago(0.5) }, ago(1), ago(2))).toEqual(['reviewValidated']);
+      expect(outdated({}, ago(1))).toEqual(['reviewValidated']);
+      const mine = { stage: 'RD Testing BE', reviewer: null, tags: ['validation-ann', 'tober+'], validated_at: ago(3) };
+      expect(outdated(mine, ago(1))).toEqual(['revalidate']);
+    });
   });
 
   test('an approved task waits for its merge', () => {

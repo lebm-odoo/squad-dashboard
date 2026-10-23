@@ -97,6 +97,8 @@ export type Task = {
   squad: string[];
   reviewer?: string | null;
   tags: string[];
+  /** When a reading saw its tober+ tag come; null when it was there at the first reading. */
+  validated_at?: number | null;
   parent?: { id: number; name: string } | null;
   stage_since?: number | null;
   created?: number | null;

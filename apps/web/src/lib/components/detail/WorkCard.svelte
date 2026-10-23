@@ -6,6 +6,7 @@ import ListChecks from '@lucide/svelte/icons/list-checks';
 import ListPlus from '@lucide/svelte/icons/list-plus';
 import Play from '@lucide/svelte/icons/play';
 import SquareArrowOutUpRight from '@lucide/svelte/icons/square-arrow-out-up-right';
+import ThumbsUp from '@lucide/svelte/icons/thumbs-up';
 import UserRound from '@lucide/svelte/icons/user-round';
 import { slide } from 'svelte/transition';
 import CodeTag from '#lib/components/board/CodeTag.svelte';
@@ -38,6 +39,7 @@ const w = $derived(tr(words).card);
 let history = $state(8);
 let stages = $state(false);
 const P = $derived(progress(board, u));
+const validation = $derived(u.task ? board.validationOf(u.task) : null);
 // The PRs of one branch, in several repositories, share a block as a feature's do.
 const branches = $derived([...Map.groupBy(u.loose, (pr) => board.requestOf(pr)?.head || pr).values()]);
 const main = $derived(u.features[0]);
@@ -213,6 +215,14 @@ const versions = $derived(
       )}
     </span>
   </div>
+  {#if validation}
+    <p class="mt-2 flex items-center gap-2 text-[12.5px]" style:color={validation.state === 'outdated' ? 'var(--critical)' : 'var(--p4)'}>
+      <ThumbsUp class="size-3.5 flex-none" />{w.validation[validation.state]?.(validation.by.map(personName).join(', '))}
+      {#if validation.state !== 'pending' && (validation.pushed || validation.at)}
+        <span class="text-muted-foreground">· {rel(validation.pushed || validation.at)}</span>
+      {/if}
+    </p>
+  {/if}
 </div>
 
 <Block title={w.where}><Steps {steps} labels={w.steps} /></Block>

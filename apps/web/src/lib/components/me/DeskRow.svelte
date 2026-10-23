@@ -21,7 +21,9 @@ import MessageCircleQuestionMark from '@lucide/svelte/icons/message-circle-quest
 import PencilLine from '@lucide/svelte/icons/pencil-line';
 import Rocket from '@lucide/svelte/icons/rocket';
 import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
+import Stamp from '@lucide/svelte/icons/stamp';
 import ThumbsUp from '@lucide/svelte/icons/thumbs-up';
+import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 import Wrench from '@lucide/svelte/icons/wrench';
 import { parseResponse } from 'hono/client';
 import type { Component } from 'svelte';
@@ -35,8 +37,8 @@ import { m, tr } from '#lib/i18n.svelte.ts';
 import { queryClient } from '#lib/live.svelte.ts';
 import { columnWait, type DeskItem } from '#lib/me/desk.ts';
 import { words } from '#lib/me/words.ts';
-import { type Board, rplusUndone, stageLabel, taskUrl } from '#lib/squad/model.ts';
-import { taskReviewers } from '#lib/squad/unit.ts';
+import { type Board, rplusUndone, stageLabel, tagged, taskUrl } from '#lib/squad/model.ts';
+import { stageOf, taskReviewers } from '#lib/squad/unit.ts';
 import { hasTodo, type TodoRef } from '#lib/todos.svelte.ts';
 
 /** One thing on my desk on one line: what it is, why it is there and since when; a click opens its card. */
@@ -48,11 +50,14 @@ const looks: Record<string, [Component, string]> = {
   mergeBlocked: [Ban, 'var(--critical)'],
   portBlocked: [CircleAlert, 'var(--critical)'],
   undone: [BadgeAlert, 'var(--critical)'],
+  revalidate: [TriangleAlert, 'var(--critical)'],
+  validationOutdated: [TriangleAlert, 'var(--critical)'],
   comments: [MessageCircle, 'var(--p3)'],
   again: [RotateCcw, 'var(--p3)'],
+  reviewValidated: [ThumbsUp, 'var(--p4)'],
+  toValidate: [Stamp, 'var(--p4)'],
   deploy: [Rocket, 'var(--good)'],
   toReview: [Eye, 'var(--link)'],
-  testing: [FlaskConical, 'var(--link)'],
   devAsks: [MessageCircleQuestionMark, 'var(--p3)'],
   toTesting: [FlaskConical, 'var(--p6)'],
   spec: [FilePenLine, 'var(--p6)'],
@@ -65,6 +70,7 @@ const looks: Record<string, [Component, string]> = {
   merge: [GitMerge, 'var(--good)'],
   ports: [GitCompareArrows, 'var(--p2)'],
   task: [ClipboardCheck, 'var(--p6)'],
+  validating: [Hourglass, 'var(--p4)'],
   validated: [ThumbsUp, 'var(--p4)'],
   approved: [Clock, 'var(--good)'],
   fixing: [Wrench, 'var(--muted-foreground)'],
@@ -101,6 +107,13 @@ const reason = $derived.by(() => {
           .map((y) => y.branch)
           .join(', ')
       : '';
+  const validators = () =>
+    task
+      ? tagged(task, 'validation')
+          .filter((who) => who !== board.me)
+          .map(personName)
+          .join(', ')
+      : '';
   const detail: Record<string, () => string> = {
     changes: () => (x.who ? personName(x.who) : ''),
     comments: () => personName(x.who ?? '?'),
@@ -109,7 +122,15 @@ const reason = $derived.by(() => {
     portBlocked: () => branches('blocked'),
     ports: () => branches('open'),
     task: () => stageLabel(task?.stage),
-    validated: () => (task ? taskReviewers(task).map(personName).join(', ') : ''),
+    validated: () => {
+      if (!task) return '';
+      const stage = stageOf(task.stage);
+      const wait = stage === 'review' ? ({ '02_changes_requested': 'changes', '03_approved': 'approved' }[task.state] ?? stage) : stage;
+      return w.validatedWait[wait]?.(taskReviewers(task).map(personName).join(', ')) ?? '';
+    },
+    validating: validators,
+    reviewValidated: validators,
+    validationOutdated: validators,
     fixing: () =>
       x.column?.live.some((c) => c.f?._events.some((e) => (e.type === 'code' || e.type === 'new') && e.t > (x.column?.since ?? 0)))
         ? 'new'

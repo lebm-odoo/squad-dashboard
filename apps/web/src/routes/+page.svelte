@@ -100,7 +100,8 @@ function focusSearch(event: KeyboardEvent) {
   <p class="text-critical">{query.error.message}</p>
 {:else if board && D}
   {@const reviews = D.now.filter((x) => x.side === 'review').length}
-  {@const teams = side === 'write' ? [] : D.teams.filter(keep)}
+  {@const validations = D.now.filter((x) => x.side === 'validate').length}
+  {@const teams = side === 'write' || side === 'validate' ? [] : D.teams.filter(keep)}
   <div class="mb-5 flex flex-wrap items-end gap-x-4 gap-y-3">
     <div class="min-w-0 flex-1">
       <p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">{dayLong(now())}</p>
@@ -115,7 +116,7 @@ function focusSearch(event: KeyboardEvent) {
   </div>
 
   <div class="mb-5 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-    <StatCard icon={Inbox} label={w.kpi.now} value={D.now.length} hint={w.kpi.nowHint(reviews, D.now.length - reviews)} href="#now" />
+    <StatCard icon={Inbox} label={w.kpi.now} value={D.now.length} hint={w.kpi.nowHint(reviews, validations, D.now.length - reviews - validations)} href="#now" />
     <StatCard icon={Hammer} label={w.kpi.doing} value={D.doing.length} hint={w.kpi.doingHint} href="#doing" />
     <StatCard icon={Hourglass} label={w.kpi.waiting} value={D.waiting.length} hint={w.kpi.waitingHint} href="#waiting" />
     <StatCard icon={GitMerge} label={w.kpi.merged} value={D.merged.length} hint={w.kpi.over(when)} href="#done" />
@@ -128,7 +129,7 @@ function focusSearch(event: KeyboardEvent) {
         <Card.Title class="text-[15px]">{w.work}</Card.Title>
         <Tabs.Root value={side} onValueChange={(value) => (side = value)}>
           <Tabs.List>
-            {#each ['all', 'write', 'review'] as key (key)}
+            {#each ['all', 'write', 'review', 'validate'] as key (key)}
               {@const n = [...D.now, ...D.doing, ...D.waiting].filter((x) => key === 'all' || x.side === key).length}
               <Tabs.Trigger value={key}>{w.sides[key]} <span class="text-muted-foreground tabular-nums">{n}</span></Tabs.Trigger>
             {/each}
@@ -147,7 +148,7 @@ function focusSearch(event: KeyboardEvent) {
         {@render lane('now', D.now, 'var(--critical)')}
         {@render lane('doing', D.doing, 'var(--link)')}
         {@render lane('waiting', D.waiting, 'var(--muted-foreground)')}
-        {#if side !== 'write'}
+        {#if side === 'all' || side === 'review'}
           <section class="border-t pt-3">
             {#if !report}
               <p class="text-xs text-muted-foreground">{w.notRead}</p>
