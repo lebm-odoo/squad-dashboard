@@ -8,6 +8,9 @@ version's.
 
 ## Unreleased
 
+- The dashboard opens in its own window from the launcher when it runs in Docker too: `scripts/app.sh install docker`.
+  Docker starts it again after a reboot.
+
 ## 2.0.0 - 2026-10-22
 
 - A new app, to install again: a Bun server with its PostgreSQL database and a page of several pages, in place of

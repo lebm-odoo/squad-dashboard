@@ -3,6 +3,7 @@ name: squad-dashboard
 services:
   db:
     image: postgres:18-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: squad_dashboard
       POSTGRES_USER: squad_dashboard
@@ -22,6 +23,8 @@ services:
       context: .
       args:
         COMMIT: ${SD_COMMIT:-}
+    # Up again with Docker after a reboot: the app opens without asking root.
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy

@@ -97,13 +97,15 @@ test('refuses a form posted from another site', async () => {
   expect(reset.status).toBe(403);
 });
 
-test('opens a web link in the default browser, when the server has one', async () => {
-  const opened: string[] = [];
-  const desktop = app({ openUrl: (url) => opened.push(url) });
-  expect((await desktop.request('/api/open', json({ url: 'https://github.com/odoo/odoo/pull/1' }))).status).toBe(204);
-  expect((await desktop.request('/api/open', json({ url: 'file:///etc/passwd' }))).status).toBe(400);
-  expect(opened).toEqual(['https://github.com/odoo/odoo/pull/1']);
-  expect((await app().request('/api/open', json({ url: 'https://github.com' }))).status).toBe(404);
+test('hands a web link to the app windows that follow them, for the default browser', async () => {
+  const server = app();
+  expect((await server.request('/api/open', json({ url: 'https://github.com' }))).status).toBe(404);
+  const follower = (await server.request('/api/open', { headers: local })).body?.getReader();
+  expect((await server.request('/api/open', json({ url: 'file:///etc/passwd' }))).status).toBe(400);
+  expect((await server.request('/api/open', json({ url: 'https://github.com/odoo/odoo/pull/1' }))).status).toBe(204);
+  expect(new TextDecoder().decode((await follower?.read())?.value)).toBe('event: open\ndata: https://github.com/odoo/odoo/pull/1\n\n');
+  await follower?.cancel();
+  expect((await server.request('/api/open', json({ url: 'https://github.com' }))).status).toBe(404);
 });
 
 test('reports a broken config.json', async () => {

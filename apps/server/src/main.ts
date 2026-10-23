@@ -51,7 +51,6 @@ const app = createApp({
   store,
   settings,
   whoami,
-  openUrl: env.RUNTIME === 'bun' ? (url) => void Bun.spawn(['xdg-open', url], { stdio: ['ignore', 'ignore', 'ignore'] }) : undefined,
   collection,
 });
 const web = relative(process.cwd(), env.WEB_DIR);
