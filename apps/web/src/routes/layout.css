@@ -209,6 +209,9 @@
   .rtag.fw-blocked {
     background: color-mix(in srgb, var(--serious) 22%, var(--card));
   }
+  .rtag.tober {
+    background: color-mix(in srgb, var(--p4) 20%, var(--card));
+  }
   .rtag.comment {
     @apply text-foreground/70;
   }

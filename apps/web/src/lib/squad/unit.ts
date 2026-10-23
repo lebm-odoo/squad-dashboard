@@ -1,4 +1,4 @@
-import { type Board, type Code, codeDone, type Feat, hasRplus, rplusUndone, stageLabel, taskClosed, uniq } from './model.ts';
+import { type Board, type Code, codeDone, type Feat, hasRplus, rplusUndone, stageLabel, taskClosed, uniq, validated } from './model.ts';
 import type { Received, Request, Task } from './types.ts';
 
 /** What the reviewers said of a feature since its last code: changes asked, an approval, a comment, the r+ of each PR. */
@@ -137,8 +137,8 @@ export type Next = { key: string; who: string | null; detail: string };
 /**
  * Whose move a task is, from its stage and state. Spec: its author's, a dev's to take once approved. Dev: the dev's, the PO's
  * when the dev asks for details (changes requested) or hands it to testing (approved). Testing: the PO's, the dev's on changes
- * requested, the reviewer's once approved. Review: the reviewer's, the dev's on changes requested; approved, the r+ is given
- * and the code takes over: null.
+ * requested, the reviewer's once approved or validated (tober+). Review: the reviewer's, the dev's on changes requested;
+ * approved, the r+ is given and the code takes over: null.
  */
 export function taskTurn(t: Task, dev: string | null, me: string): Next | null {
   const one = (people: string[]) => (people.includes(me) ? me : (people[0] ?? null));
@@ -153,7 +153,11 @@ export function taskTurn(t: Task, dev: string | null, me: string): Next | null {
   if (stage === 'spec') return approved ? next('pick', null) : next('spec', one(t.people));
   if (stage === 'dev') return changes ? next('devAsks', one(po)) : approved ? next('toTesting', one(po)) : next('dev', one(devs));
   if (stage === 'testing')
-    return changes ? next('testChanges', one(devs)) : approved ? next('toReview', one(taskReviewers(t))) : next('testing', one(po));
+    return changes
+      ? next('testChanges', one(devs))
+      : approved || validated(t)
+        ? next('toReview', one(taskReviewers(t)))
+        : next('testing', one(po));
   return changes ? next('changes', one(devs)) : approved ? null : next('review', one(taskReviewers(t)));
 }
 
@@ -186,7 +190,7 @@ export function progress(board: Board, u: Unit) {
     const pipe = ['spec', 'dev', 'testing', 'review'];
     const visited = new Set([...(t.changes ?? []).map(([, s]) => stageOf(s)), stage]);
     const current = deployed ? pipe.length : pipe.indexOf(stage as string);
-    const approved = t.state === '03_approved';
+    const approved = t.state === '03_approved' || (stage === 'testing' && t.state === '01_in_progress' && validated(t));
     steps = pipe.flatMap((key, i): { key: string; state: StepState }[] => {
       if (i < current && !visited.has(key)) return [];
       if (i < current || (i === current && approved)) return [{ key, state: 'done' }];

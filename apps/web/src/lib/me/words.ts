@@ -33,7 +33,7 @@ const en = {
     doing: ['In progress', 'Your branches without a PR, your drafts, your tasks without a PR linked: the most recent first.'],
     waiting: [
       'Waiting on others',
-      'Your PRs waiting for a review, an r+ or the merge, your ports on their way, the tasks you approved waiting for their merge: the longest waiting first.',
+      'Your PRs waiting for a review, an r+ or the merge, your ports on their way, the tasks you validated waiting for their review, those you approved waiting for their merge: the longest waiting first.',
     ],
   } as Record<string, [string, string]>,
   empty: { now: 'Nothing waits for you.', doing: 'Nothing in progress.', waiting: 'Nothing waiting on others.' } as Record<string, string>,
@@ -43,7 +43,7 @@ const en = {
   teams: (teams: string, n: number) => `Asked of ${teams || 'your teams'} · ${n}`,
   teamsHint: 'Code owners: one of you reviews.',
   aside: (n: number) =>
-    `${plEn(n, 'request')} set aside: already r+, validated by a colleague, or PRs of colleagues, followed through their tasks.`,
+    `${plEn(n, 'request')} set aside: already r+, validated by a colleague, of tasks you validated, or PRs of colleagues, followed through their tasks.`,
   discard: 'Set aside',
   discardTitle: (direct: boolean): string =>
     direct
@@ -90,6 +90,7 @@ const en = {
     merge: () => 'r+ given, on its way to the merge',
     ports: (branches: string) => `Merged, forward-ports ${branches} on their way`,
     task: (stage: string) => `Merged, task still in ${stage}`,
+    validated: (who: string) => `Validated, waiting for ${who ? `${who}’s review` : 'a reviewer'}`,
     approved: (wait: string) => `Approved, ${wait}`,
     undone: (what: string) => `Approved, but ${what}`,
   } as Record<string, (detail: string) => string>,
@@ -240,7 +241,7 @@ const fr: typeof en = {
     doing: ['En cours', 'Tes branches sans PR, tes brouillons, tes tâches sans PR liée : les plus récentes d’abord.'],
     waiting: [
       'En attente des autres',
-      'Tes PR qui attendent une review, un r+ ou le merge, tes ports en route, les tâches que tu as approuvées en attente de leur merge : ce qui attend depuis le plus longtemps d’abord.',
+      'Tes PR qui attendent une review, un r+ ou le merge, tes ports en route, les tâches que tu as validées en attente de leur review, celles que tu as approuvées en attente de leur merge : ce qui attend depuis le plus longtemps d’abord.',
     ],
   },
   empty: { now: 'Rien ne t’attend.', doing: 'Rien en cours.', waiting: 'Rien n’attend les autres.' },
@@ -250,7 +251,7 @@ const fr: typeof en = {
   teams: (teams, n) => `Demandées à ${teams || 'tes équipes'} · ${n}`,
   teamsHint: 'Code owners : l’un de vous reviewe.',
   aside: (n) =>
-    `${plFr(n, 'demande')} mise${n > 1 ? 's' : ''} de côté : déjà r+, validée${n > 1 ? 's' : ''} par un collègue, ou PR de collègues, suivie${n > 1 ? 's' : ''} par leurs tâches.`,
+    `${plFr(n, 'demande')} mise${n > 1 ? 's' : ''} de côté : déjà r+, validée${n > 1 ? 's' : ''} par un collègue, de tâches que tu as validées, ou PR de collègues, suivie${n > 1 ? 's' : ''} par leurs tâches.`,
   discard: 'Écarter',
   discardTitle: (direct) =>
     direct
@@ -293,6 +294,7 @@ const fr: typeof en = {
     merge: () => 'r+ donné, en route vers le merge',
     ports: (branches) => `Mergée, forward-ports ${branches} en route`,
     task: (stage) => `Mergée, tâche encore en ${stage}`,
+    validated: (who) => `Validée, en attente ${who ? `de la review de ${who}` : 'd’un reviewer'}`,
     approved: (wait) => `Approuvée, ${wait}`,
     undone: (what) => `Approuvée, mais ${what}`,
   },

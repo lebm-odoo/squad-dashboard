@@ -21,6 +21,7 @@ import MessageCircleQuestionMark from '@lucide/svelte/icons/message-circle-quest
 import PencilLine from '@lucide/svelte/icons/pencil-line';
 import Rocket from '@lucide/svelte/icons/rocket';
 import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
+import ThumbsUp from '@lucide/svelte/icons/thumbs-up';
 import Wrench from '@lucide/svelte/icons/wrench';
 import { parseResponse } from 'hono/client';
 import type { Component } from 'svelte';
@@ -35,6 +36,7 @@ import { queryClient } from '#lib/live.svelte.ts';
 import { columnWait, type DeskItem } from '#lib/me/desk.ts';
 import { words } from '#lib/me/words.ts';
 import { type Board, rplusUndone, stageLabel, taskUrl } from '#lib/squad/model.ts';
+import { taskReviewers } from '#lib/squad/unit.ts';
 import { hasTodo, type TodoRef } from '#lib/todos.svelte.ts';
 
 /** One thing on my desk on one line: what it is, why it is there and since when; a click opens its card. */
@@ -63,6 +65,7 @@ const looks: Record<string, [Component, string]> = {
   merge: [GitMerge, 'var(--good)'],
   ports: [GitCompareArrows, 'var(--p2)'],
   task: [ClipboardCheck, 'var(--p6)'],
+  validated: [ThumbsUp, 'var(--p4)'],
   approved: [Clock, 'var(--good)'],
   fixing: [Wrench, 'var(--muted-foreground)'],
 };
@@ -106,6 +109,7 @@ const reason = $derived.by(() => {
     portBlocked: () => branches('blocked'),
     ports: () => branches('open'),
     task: () => stageLabel(task?.stage),
+    validated: () => (task ? taskReviewers(task).map(personName).join(', ') : ''),
     fixing: () =>
       x.column?.live.some((c) => c.f?._events.some((e) => (e.type === 'code' || e.type === 'new') && e.t > (x.column?.since ?? 0)))
         ? 'new'

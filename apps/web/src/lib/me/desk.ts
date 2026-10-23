@@ -40,6 +40,7 @@ export type Why =
   | 'merge'
   | 'ports'
   | 'task'
+  | 'validated'
   | 'approved'
   | 'fixing';
 
@@ -131,6 +132,7 @@ export function desk(board: Board, P: Period) {
     ['merge', 'waiting'],
     ['ports', 'waiting'],
     ['task', 'waiting'],
+    ['validated', 'waiting'],
     ['approved', 'waiting'],
     ['fixing', 'waiting'],
   ];
@@ -160,7 +162,7 @@ export function desk(board: Board, P: Period) {
       },
     );
   };
-  const column = board.data.odoo?.at ? board.reviewColumn() : { again: [], fixing: [], waiting: [], ready: [] };
+  const column = board.data.odoo?.at ? board.reviewColumn() : { again: [], validated: [], fixing: [], waiting: [], ready: [] };
   const asked = new Map(board.requests.filter((p) => !board.asideReason(p)).map((p) => [p.pr, p]));
   // A colleague's PR I gave the r+ to is followed through its task, if it has one.
   const followed = new Map(board.followed.filter((p) => !p.colleague || !board.tasksOfPr(p.pr).length).map((p) => [p.pr, p]));
@@ -168,6 +170,7 @@ export function desk(board: Board, P: Period) {
   const items: DeskItem[] = [];
   for (const [list, why] of [
     [column.again, 'again'],
+    [column.validated, 'validated'],
     [column.ready, 'deploy'],
     [column.waiting, 'approved'],
     [column.fixing, 'fixing'],
@@ -199,9 +202,11 @@ export function desk(board: Board, P: Period) {
     const code = board.codeOf(p.pr) ?? undefined;
     if (!code || !(code.closed || codeDone(code))) items.push(requestItem(p, code));
   }
-  // Elsewhere than in Review, the pipe hands a task to me as its PO, its tester or its reviewer once tested.
+  // Elsewhere than in Review, the pipe hands a task to me as its PO, its tester or its reviewer once tested; validated by me
+  // as its PO alone, it waits for its reviewer.
   const handed = (t: Task) => {
     const turn = taskTurn(t, board.featuresOfTask(t)[0]?.owner ?? null, board.me);
+    if (turn?.key === 'toReview' && board.validatedByMe(t)) return 'validated';
     return turn?.who === board.me && ['spec', 'devAsks', 'toTesting', 'testing', 'toReview'].includes(turn.key) ? (turn.key as Why) : null;
   };
   const taskItem = (t: Task, why: Why) =>

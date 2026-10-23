@@ -10,6 +10,8 @@ version's.
 
 - The dashboard opens in its own window from the launcher when it runs in Docker too: `scripts/app.sh install docker`.
   Docker starts it again after a reboot.
+- A task validated by its PO with the tober+ tag goes to its reviewer, even left in progress: on Me it is the reviewer's to
+  review, while its PO sees it waiting on others, with a thumbs-up in pink, their review asked on its PRs set aside.
 
 ## 2.0.0 - 2026-10-22
 

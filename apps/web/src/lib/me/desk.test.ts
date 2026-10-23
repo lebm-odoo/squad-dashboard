@@ -214,6 +214,15 @@ describe('my reviews', () => {
     expect(deskOf({ tasks: [{ ...testing, state: '03_approved', tags: ['review-ann'] }] }).now).toMatchObject([{ why: 'toReview' }]);
   });
 
+  test('a task I validated as its PO alone waits for its reviewer, in testing or in review, its request set aside', () => {
+    const testing = { ...task, stage: 'RD Testing BE', reviewer: null, tags: ['validation-ann', 'review-bob', 'tober+'] };
+    const D = deskOf({ tasks: [testing], requests: [request('odoo/odoo#9')] });
+    expect([D.now, D.aside]).toEqual([[], 1]);
+    expect(D.waiting).toMatchObject([{ why: 'validated', key: 'task:7' }]);
+    expect(deskOf({ tasks: [{ ...testing, stage: 'RD Review' }] }).waiting).toMatchObject([{ why: 'validated', key: 'task:7' }]);
+    expect(deskOf({ tasks: [{ ...testing, tags: ['validation-ann', 'review-ann', 'tober+'] }] }).now).toMatchObject([{ why: 'toReview' }]);
+  });
+
   test('an approved task waits for its merge', () => {
     const D = deskOf({ tasks: [{ ...task, state: '03_approved' }] });
     expect(D.waiting).toMatchObject([{ why: 'approved', side: 'review' }]);

@@ -87,6 +87,8 @@ export const lastActivity = (f: Feat) => (f._activity.length ? Math.max(...f._ac
 export const inProgress = (f: Feature) => f.status === 'open' || (f.status === 'wip' && !f.deleted);
 export const statusKey = (f: Feat) => (f.status === 'open' && f._draft ? 'draft' : f.status);
 export const taskClosed = (t: Task) => t.state === '1_done' || t.state === '1_canceled';
+/** Validated by its PO, who tags it tober+ rather than give an r+ they may not give alone: the review is what is left. */
+export const validated = (t: Task) => t.tags.some((tag) => tag.trim().toLowerCase() === 'tober+');
 export const stageLabel = (stage?: string) => (stage || 'No stage').replace(/^RD\s+/, '');
 export const reviewerKind = (y: FeatureReviewer): ReviewerKind =>
   y.rplus ? 'rplus' : y.states.includes('APPROVED') ? 'validation' : y.states.includes('CHANGES_REQUESTED') ? 'changes' : 'comment';
@@ -608,14 +610,27 @@ export class Board {
     return [...feats.map(this.codeOfFeature), ...prs.map(([, pr]) => this.codeOfPr(pr))];
   }
 
+  /** A task I am only the PO of and validated: it waits for its reviewer, nothing is left for me to do. */
+  validatedByMe = (t: Task) => {
+    const tagged = (kind: string) => t.tags.some((tag) => tag.trim().toLowerCase() === `${kind}-${this.me}`);
+    return validated(t) && tagged('validation') && !tagged('review') && t.reviewer !== this.me;
+  };
+
   /**
    * The Review column of my own pipe: the tasks I review, as reviewer or by a review-<trigram> or validation-<trigram> tag,
-   * and the ones assigned to me but for my own code. In progress: mine to review (again); changes requested or on hold: the
-   * dev's to fix; approved: to deploy once all is merged, forward-ports included.
+   * and the ones assigned to me but for my own code. In progress: mine to review (again), its reviewer's once I validated it
+   * as its PO alone; changes requested or on hold: the dev's to fix; approved: to deploy once all is merged, forward-ports
+   * included.
    */
   reviewColumn() {
     const me = this.me;
-    const out: Record<'again' | 'fixing' | 'waiting' | 'ready', ColumnItem[]> = { again: [], fixing: [], waiting: [], ready: [] };
+    const out: Record<'again' | 'validated' | 'fixing' | 'waiting' | 'ready', ColumnItem[]> = {
+      again: [],
+      validated: [],
+      fixing: [],
+      waiting: [],
+      ready: [],
+    };
     const tags = [`review-${me}`, `validation-${me}`];
     const mine = (t: Task) =>
       t.reviewer === me ||
@@ -633,7 +648,7 @@ export class Board {
         guess: this.featuresOfTask(t).some((f) => this.isGuess(f, t)),
       };
       if (t.state === '02_changes_requested' || t.state === '04_waiting_normal') out.fixing.push(x);
-      else if (t.state !== '03_approved') out.again.push(x);
+      else if (t.state !== '03_approved') (this.validatedByMe(t) ? out.validated : out.again).push(x);
       else (live.length && live.every(codeDone) ? out.ready : out.waiting).push(x);
     }
     for (const list of Object.values(out)) list.sort((a, b) => a.since - b.since);
@@ -993,10 +1008,14 @@ export class Board {
     };
   }
 
-  /** Why a request needs nothing from me: already r+, validated by a colleague, or a colleague's PR asked through a GitHub team. */
+  /**
+   * Why a request needs nothing from me: already r+, validated by a colleague, its task validated by me as its PO, or a
+   * colleague's PR asked through a GitHub team.
+   */
   asideReason(p: Request, name = (who: string) => who) {
     if (p.rplus.length) return { kind: 'rplus' as const, who: uniq(p.rplus.map(([who]) => name(who))) };
     if (p.validations.length) return { kind: 'validated' as const, who: uniq(p.validations.map(([who]) => name(who))) };
+    if (this.tasksOfPr(p.pr).some(([t, how]) => how !== 'guess' && this.validatedByMe(t))) return { kind: 'tober' as const, who: [] };
     // A colleague's PR is followed through its task and the pipe, whoever GitHub asks.
     if (p.colleague) return { kind: 'colleague' as const, who: [] };
     return null;
