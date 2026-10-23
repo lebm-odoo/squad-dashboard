@@ -304,6 +304,7 @@ const versions = $derived(
 
 {#if u.task}
   {@const t = u.task}
+  {@const reviewers = taskReviewers(t)}
   <Block title={w.task}>
     <Facts>
       <Fact label={w.stage}>
@@ -311,7 +312,9 @@ const versions = $derived(
         {#if t.stage_since}<span class="text-muted-foreground">{w.inStage(age(t.stage_since))}</span>{/if}
       </Fact>
       {#if t.people.length}<Fact label={w.assigned}>{#each t.people as person (person)}<WhoTag {board} {person} class="text-[13px]" />{/each}</Fact>{/if}
-      {#if t.reviewer}<Fact label={w.reviewer}><WhoTag {board} person={t.reviewer} class="text-[13px]" /></Fact>{/if}
+      {#if reviewers.length}
+        <Fact label={w.reviewer}>{#each reviewers as person (person)}<WhoTag {board} {person} class="text-[13px]" />{/each}</Fact>
+      {/if}
       {#if t.tags.length}<Fact label={w.tags}>{#each t.tags as tag (tag)}<span class="rtag">{tag.trim()}</span>{/each}</Fact>{/if}
       {#if t.project}<Fact label={w.project}>{t.project}</Fact>{/if}
     </Facts>

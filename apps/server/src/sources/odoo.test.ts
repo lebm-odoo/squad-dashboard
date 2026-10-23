@@ -97,7 +97,7 @@ describe('Odoo', () => {
     expect(read.notFound).toEqual([]);
   });
 
-  test('the tasks the lead reviews, those closed in the last 60 days too: a move to Deployed by someone else shows', async () => {
+  test('the tasks the lead reviews by their tags, those closed in the last 60 days too: a move to Deployed by someone else shows', async () => {
     const domains: unknown[][] = [];
     const { odoo } = odooServer((model, method, params) => {
       if (method === 'fields_get') return { name: {}, stage_id: {}, state: {}, user_ids: {}, reviewer_id: {}, date_last_stage_update: {} };
@@ -116,6 +116,8 @@ describe('Odoo', () => {
       now: Date.parse('2026-10-17T10:00:00Z') / 1000,
     });
     expect(domains[1]).toContainEqual(['date_last_stage_update', '>=', '2026-08-18 10:00:00']);
+    expect(domains[1]).toContainEqual(['tag_ids.name', 'in', ['review-anne', 'validation-anne']]);
+    expect(JSON.stringify(domains[1])).not.toContain('reviewer_id');
     expect(read.tasks[8]).toMatchObject({ stage: 'RD Deployed', state: '1_done', reviewer: 'anne' });
   });
 });

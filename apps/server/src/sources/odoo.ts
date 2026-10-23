@@ -154,12 +154,12 @@ export async function readTasks(
         fields,
       )
     : [];
-  const leadId = [...squadOf].find(([, member]) => member === lead)?.[0];
-  if (leadId) {
-    // The tasks the lead reviews: as reviewer, or by their review-<trigram> and validation-<trigram> tags.
+  if (lead) {
+    // The tasks the lead reviews or validates, by their review-<trigram> and validation-<trigram> tags, never by the
+    // task's reviewer field.
     const known = new Set(rows.map((task) => task.id));
-    const reviewed = ['|', ['reviewer_id', '=', leadId], ['tag_ids.name', 'in', [`review-${lead}`, `validation-${lead}`]]];
-    for (const task of await odoo.searchRead('project.task', [...reviewed, ...current], fields)) if (!known.has(task.id)) rows.push(task);
+    const reviewed = [['tag_ids.name', 'in', [`review-${lead}`, `validation-${lead}`]], ...current];
+    for (const task of await odoo.searchRead('project.task', reviewed, fields)) if (!known.has(task.id)) rows.push(task);
   }
   const missing = [...new Set([...named, ...kept])].filter((id) => !rows.some((task) => task.id === id)).sort((a, b) => a - b);
   if (missing.length) rows.push(...(await odoo.searchRead('project.task', [['id', 'in', missing]], fields)));

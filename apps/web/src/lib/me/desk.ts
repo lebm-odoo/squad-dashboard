@@ -13,7 +13,7 @@ import {
   uniq,
 } from '../squad/model.ts';
 import type { Request, Task } from '../squad/types.ts';
-import { reviewState, stageOf, taskTurn } from '../squad/unit.ts';
+import { reviewState, stageOf, taskReviewers, taskTurn } from '../squad/unit.ts';
 
 /** Where an item stands for me: it waits for me, I am on it, or it waits for someone else. */
 export type Lane = 'now' | 'doing' | 'waiting';
@@ -80,12 +80,13 @@ function writing(board: Board, f: Feat, t: number): [Why, number, string?] {
   if (!open.length) return [f.status === 'wip' ? 'wip' : 'noPr', t];
   if (f._draft) return ['draft', t];
   const task = board.mainTask(f);
+  const reviewers = task ? taskReviewers(task) : [];
   // Unlike a GitHub review, a push does not answer changes asked on the task: they stand until the task moves on.
   if (changes || task?.state === '02_changes_requested')
     return [
       'changes',
       changes?.at ?? task?.changes?.at(-1)?.[0] ?? task?.stage_since ?? t,
-      changes ? board.reviewerLogin(changes) : (task?.reviewer ?? undefined),
+      changes ? board.reviewerLogin(changes) : reviewers.length === 1 ? reviewers[0] : undefined,
     ];
   if (f._ciFail) return ['ci', t];
   if (open.every(hasRplus)) return [open.some((p) => p.blocked) ? 'mergeBlocked' : 'merge', t];

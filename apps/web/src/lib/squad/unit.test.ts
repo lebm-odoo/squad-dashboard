@@ -30,8 +30,8 @@ const task: Task = {
   state: '03_approved',
   people: ['bob'],
   squad: [],
-  reviewer: 'ann',
-  tags: [],
+  reviewer: 'dan',
+  tags: ['review-ann'],
 };
 
 function boardOf(master: string, { requests = [] as Request[], features = [] as Feature[], tasks = [] as Task[] } = {}) {
@@ -202,6 +202,7 @@ test('the pipe says whose move a task is', () => {
   expect(turn(at('RD Testing BE', '03_approved', ['review-ann']))).toMatchObject({ key: 'toReview', who: 'ann' });
   expect(turn(at('RD Testing BE', '01_in_progress', ['validation-ann', 'tober+']))).toMatchObject({ key: 'validated', who: null });
   expect(turn(at('RD Review', '01_in_progress', ['review-ann']))).toMatchObject({ key: 'review', who: 'ann' });
+  expect(turn({ ...at('RD Review', '01_in_progress'), reviewer: 'ann' })).toMatchObject({ key: 'review', who: null });
   expect(turn(at('RD Review', '03_approved'))).toBeNull();
 });
 
