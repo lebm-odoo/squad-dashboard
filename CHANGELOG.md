@@ -8,6 +8,8 @@ version's.
 
 ## Unreleased
 
+## 2.1.0 - 2026-10-23
+
 - The dashboard opens in its own window from the launcher when it runs in Docker too: `scripts/app.sh install docker`.
   Docker starts it again after a reboot.
 - Validation is a column of its own on Me, next to My code and My reviews. A task of your validation-<trigram> tag is
