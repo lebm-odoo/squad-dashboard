@@ -9,25 +9,29 @@ import {
   inP,
   type Period,
   rplusUndone,
+  taskClosed,
   uniq,
 } from '../squad/model.ts';
 import type { Request, Task } from '../squad/types.ts';
-import { reviewState, taskTurn } from '../squad/unit.ts';
+import { reviewState, stageOf, taskTurn } from '../squad/unit.ts';
 
 /** Where an item stands for me: it waits for me, I am on it, or it waits for someone else. */
 export type Lane = 'now' | 'doing' | 'waiting';
-export type Side = 'write' | 'review';
+export type Side = 'write' | 'review' | 'validate';
 export type Why =
   | 'changes'
   | 'ci'
   | 'mergeBlocked'
   | 'portBlocked'
   | 'undone'
+  | 'revalidate'
+  | 'validationOutdated'
   | 'comments'
   | 'again'
+  | 'reviewValidated'
+  | 'toValidate'
   | 'deploy'
   | 'toReview'
-  | 'testing'
   | 'devAsks'
   | 'toTesting'
   | 'spec'
@@ -40,6 +44,8 @@ export type Why =
   | 'merge'
   | 'ports'
   | 'task'
+  | 'validating'
+  | 'validated'
   | 'approved'
   | 'fixing';
 
@@ -104,8 +110,8 @@ export function columnWait(live: Code[]): [string, string] {
 }
 
 /**
- * My desk: my code and the reviews I owe, by what they wait for, the most pressing first; the reviews asked of my GitHub
- * teams apart; what I merged and reviewed over a period.
+ * My desk: my code, the reviews and validations I owe, by what they wait for, the most pressing first; the reviews asked of
+ * my GitHub teams apart; what I merged and reviewed over a period.
  */
 export function desk(board: Board, P: Period) {
   const order: [Why, Lane][] = [
@@ -114,11 +120,14 @@ export function desk(board: Board, P: Period) {
     ['mergeBlocked', 'now'],
     ['portBlocked', 'now'],
     ['undone', 'now'],
+    ['revalidate', 'now'],
+    ['validationOutdated', 'now'],
     ['comments', 'now'],
     ['again', 'now'],
+    ['reviewValidated', 'now'],
+    ['toValidate', 'now'],
     ['deploy', 'now'],
     ['toReview', 'now'],
-    ['testing', 'now'],
     ['devAsks', 'now'],
     ['toTesting', 'now'],
     ['spec', 'now'],
@@ -131,6 +140,8 @@ export function desk(board: Board, P: Period) {
     ['merge', 'waiting'],
     ['ports', 'waiting'],
     ['task', 'waiting'],
+    ['validating', 'waiting'],
+    ['validated', 'waiting'],
     ['approved', 'waiting'],
     ['fixing', 'waiting'],
   ];
@@ -166,43 +177,61 @@ export function desk(board: Board, P: Period) {
   const followed = new Map(board.followed.filter((p) => !p.colleague || !board.tasksOfPr(p.pr).length).map((p) => [p.pr, p]));
   const reviewed = new Set<number>();
   const items: DeskItem[] = [];
+  const columnTask = (x: ColumnItem, why: Why, side: Side = 'review', since = x.since) => {
+    const prs = board.prsOfTask(x.t);
+    const request = prs.map((key) => asked.get(key)).find((p) => !!p);
+    // An approved task whose PR moved since my r+ is mine again.
+    const undone =
+      why === 'approved' ? board.followed.find((p) => prs.includes(p.pr) && !board.codeOf(p.pr)?.merged && rplusUndone(p)) : undefined;
+    for (const key of prs) {
+      asked.delete(key);
+      followed.delete(key);
+    }
+    reviewed.add(x.t.id);
+    items.push(
+      item(side, undone ? 'undone' : why, undone ? (rplusUndone(undone)?.[1] ?? since) : since, {
+        key: `task:${x.t.id}`,
+        task: x.t,
+        column: x,
+        request: undone ?? request,
+        who: x.t.people.find((p) => p !== board.me),
+        search: `${x.t.id} ${x.t.name} ${x.t.people.join(' ')}`.toLowerCase(),
+      }),
+    );
+  };
+  // In review, a task waits for its validators first: validated (tober+), it is mine to review.
+  for (const x of column.again) {
+    const v = board.validationOf(x.t);
+    if (!v) columnTask(x, 'again');
+    else if (v.by.includes(board.me) && v.state !== 'done') columnTask(x, v.state === 'pending' ? 'toValidate' : 'revalidate', 'validate');
+    else columnTask(x, v.state === 'pending' ? 'validating' : v.state === 'outdated' ? 'validationOutdated' : 'reviewValidated');
+  }
   for (const [list, why] of [
-    [column.again, 'again'],
     [column.ready, 'deploy'],
     [column.waiting, 'approved'],
     [column.fixing, 'fixing'],
   ] as const)
-    for (const x of list) {
-      const prs = board.prsOfTask(x.t);
-      const request = prs.map((key) => asked.get(key)).find((p) => !!p);
-      // An approved task whose PR moved since my r+ is mine again.
-      const undone =
-        why === 'approved' ? board.followed.find((p) => prs.includes(p.pr) && !board.codeOf(p.pr)?.merged && rplusUndone(p)) : undefined;
-      for (const key of prs) {
-        asked.delete(key);
-        followed.delete(key);
-      }
-      reviewed.add(x.t.id);
-      items.push(
-        item('review', undone ? 'undone' : why, undone ? (rplusUndone(undone)?.[1] ?? x.since) : x.since, {
-          key: `task:${x.t.id}`,
-          task: x.t,
-          column: x,
-          request: undone ?? request,
-          who: x.t.people.find((p) => p !== board.me),
-          search: `${x.t.id} ${x.t.name} ${x.t.people.join(' ')}`.toLowerCase(),
-        }),
-      );
-    }
+    for (const x of list) columnTask(x, why);
+  // My Validation column, apart from the stages: the tasks of my validation-<trigram> tag from Testing on, from Dev once
+  // validated. Validated (tober+), nothing is left for me to do but validate again what was pushed since.
+  for (const t of board.allTasks()) {
+    const v = taskClosed(t) || reviewed.has(t.id) ? null : board.validationOf(t);
+    const stage = stageOf(t.stage);
+    if (!v?.by.includes(board.me) || !['dev', 'testing', 'review'].includes(stage) || (stage === 'dev' && v.state === 'pending')) continue;
+    const x = board.columnItem(t);
+    if (v.state === 'outdated') columnTask(x, 'revalidate', 'validate', v.pushed);
+    else if (v.state === 'done') columnTask(x, 'validated', 'validate', v.at || x.since);
+    else columnTask(x, t.state === '02_changes_requested' || t.state === '04_waiting_normal' ? 'fixing' : 'toValidate', 'validate');
+  }
   items.push(...[...asked.values()].filter((p) => p.direct).map((p) => requestItem(p)));
   for (const p of followed.values()) {
     const code = board.codeOf(p.pr) ?? undefined;
     if (!code || !(code.closed || codeDone(code))) items.push(requestItem(p, code));
   }
-  // Elsewhere than in Review, the pipe hands a task to me as its PO, its tester or its reviewer once tested.
+  // Elsewhere than in my Review and Validation columns, the pipe hands a task to me as its PO or its reviewer once tested.
   const handed = (t: Task) => {
     const turn = taskTurn(t, board.featuresOfTask(t)[0]?.owner ?? null, board.me);
-    return turn?.who === board.me && ['spec', 'devAsks', 'toTesting', 'testing', 'toReview'].includes(turn.key) ? (turn.key as Why) : null;
+    return turn?.who === board.me && ['spec', 'devAsks', 'toTesting', 'toReview'].includes(turn.key) ? (turn.key as Why) : null;
   };
   const taskItem = (t: Task, why: Why) =>
     item(why === 'noPr' ? 'write' : 'review', why, t.stage_since || t.updated || 0, {

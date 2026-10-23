@@ -55,6 +55,7 @@ export type Code = {
 export type ReviewerKind = 'rplus' | 'validation' | 'changes' | 'comment';
 export type FeatureReviewer = { who: string; rplus: boolean; states: string[]; last: number };
 export type ColumnItem = { t: Task; code: Code[]; live: Code[]; since: number; guess: boolean };
+export type Validation = { by: string[]; state: 'pending' | 'done' | 'outdated'; at: number; pushed: number };
 export type CurrentItem = { f?: Feat; task?: Task; who?: string; port?: boolean; t: number };
 
 export type WorkFilter = {
@@ -87,6 +88,17 @@ export const lastActivity = (f: Feat) => (f._activity.length ? Math.max(...f._ac
 export const inProgress = (f: Feature) => f.status === 'open' || (f.status === 'wip' && !f.deleted);
 export const statusKey = (f: Feat) => (f.status === 'open' && f._draft ? 'draft' : f.status);
 export const taskClosed = (t: Task) => t.state === '1_done' || t.state === '1_canceled';
+/** The trigrams of a task's <kind>-<trigram> tags. */
+export const tagged = (t: Task, kind: string) =>
+  t.tags.flatMap(
+    (tag) =>
+      tag
+        .trim()
+        .toLowerCase()
+        .match(new RegExp(`^${kind}-([a-z]+)$`))?.[1] ?? [],
+  );
+/** Validated by its PO, who tags it tober+ rather than give an r+ they may not give alone. */
+export const validated = (t: Task) => t.tags.some((tag) => tag.trim().toLowerCase() === 'tober+');
 export const stageLabel = (stage?: string) => (stage || 'No stage').replace(/^RD\s+/, '');
 export const reviewerKind = (y: FeatureReviewer): ReviewerKind =>
   y.rplus ? 'rplus' : y.states.includes('APPROVED') ? 'validation' : y.states.includes('CHANGES_REQUESTED') ? 'changes' : 'comment';
@@ -609,32 +621,62 @@ export class Board {
   }
 
   /**
-   * The Review column of my own pipe: the tasks I review, as reviewer or by a review-<trigram> or validation-<trigram> tag,
-   * and the ones assigned to me but for my own code. In progress: mine to review (again); changes requested or on hold: the
-   * dev's to fix; approved: to deploy once all is merged, forward-ports included.
+   * The validation of a task, apart from its stages: its validators, by their validation-<trigram> tags, and whether they
+   * gave it the tober+. Code pushed since outdates it: since the reading that saw tober+ come or a validator's last approval
+   * on GitHub, whichever is last; neither known, nothing tells it.
+   */
+  validationOf(t: Task): Validation | null {
+    const by = tagged(t, 'validation');
+    if (!by.length) return null;
+    if (!validated(t)) return { by, state: 'pending', at: 0, pushed: 0 };
+    const features = this.featuresOfTask(t).filter((f) => !this.isGuess(f, t));
+    const prs = this.prsOfTask(t);
+    const at = Math.max(
+      t.validated_at ?? 0,
+      ...features.flatMap((f) =>
+        (f.gh?.received ?? []).filter((rv) => rv.state === 'APPROVED' && by.includes(this.reviewerLogin(rv))).map((rv) => rv.at),
+      ),
+      ...this.reviews.filter((r) => r.state === 'APPROVED' && by.includes(r.reviewer) && prs.includes(r.pr)).map((r) => r.t),
+    );
+    const pushes = [
+      ...features
+        .filter((f) => !f.merged_at)
+        .flatMap((f) => f._events.filter((e) => e.type === 'code' || e.type === 'new').map((e) => e.t)),
+      ...prs.map((pr) => this.requestOf(pr)?.pushed_at ?? 0),
+    ];
+    const pushed = at ? Math.max(0, ...pushes.filter((p) => p > at)) : 0;
+    return { by, state: pushed ? 'outdated' : 'done', at, pushed };
+  }
+
+  columnItem = (t: Task): ColumnItem => {
+    const code = this.codeOfTask(t);
+    return {
+      t,
+      code,
+      live: code.filter((c) => !c.closed),
+      since: t.changes?.at(-1)?.[0] || t.stage_since || 0,
+      guess: this.featuresOfTask(t).some((f) => this.isGuess(f, t)),
+    };
+  };
+
+  /**
+   * The Review column of my own pipe: the tasks I review, as reviewer or by a review-<trigram> tag, and the ones assigned to
+   * me but for my own code. In progress: mine to review (again); changes requested or on hold: the dev's to fix; approved:
+   * to deploy once all is merged, forward-ports included.
    */
   reviewColumn() {
     const me = this.me;
     const out: Record<'again' | 'fixing' | 'waiting' | 'ready', ColumnItem[]> = { again: [], fixing: [], waiting: [], ready: [] };
-    const tags = [`review-${me}`, `validation-${me}`];
     const mine = (t: Task) =>
       t.reviewer === me ||
-      t.tags.some((tag) => tags.includes(tag.trim().toLowerCase())) ||
+      tagged(t, 'review').includes(me) ||
       (t.people.includes(me) && !this.featuresOfTask(t).some((f) => f.owner === me));
     for (const t of this.allTasks()) {
       if (taskClosed(t) || !/^review$/i.test(stageLabel(t.stage)) || !mine(t)) continue;
-      const code = this.codeOfTask(t);
-      const live = code.filter((c) => !c.closed);
-      const x = {
-        t,
-        code,
-        live,
-        since: t.changes?.at(-1)?.[0] || t.stage_since || 0,
-        guess: this.featuresOfTask(t).some((f) => this.isGuess(f, t)),
-      };
+      const x = this.columnItem(t);
       if (t.state === '02_changes_requested' || t.state === '04_waiting_normal') out.fixing.push(x);
       else if (t.state !== '03_approved') out.again.push(x);
-      else (live.length && live.every(codeDone) ? out.ready : out.waiting).push(x);
+      else (x.live.length && x.live.every(codeDone) ? out.ready : out.waiting).push(x);
     }
     for (const list of Object.values(out)) list.sort((a, b) => a.since - b.since);
     return out;

@@ -4,7 +4,7 @@ import { loadCursor, saveCursor } from '../db/git';
 import { insertRows, toDate } from '../db/rows';
 import { gitBranch, mergebotPr, odooTask } from '../db/schema';
 import { ownerOf } from '../domain/branches';
-import { type Odoo, readTasks, type TaskChange } from '../sources/odoo';
+import { type Odoo, readTasks, type Task, type TaskChange } from '../sources/odoo';
 import { leadReviewedPrs } from './web';
 
 /** The squad's Odoo tasks, and the changes of stage seen since the last reading. */
@@ -30,10 +30,11 @@ export async function syncTasks(
     ),
   ].map(Number);
   const history = Object.fromEntries(stored.map(({ id, changes }) => [id, changes as TaskChange[]]));
+  const previous = Object.fromEntries(stored.map(({ id, data }) => [id, data as Task | null]));
   const kept = stored.flatMap(({ id, data }) =>
     ['1_done', '1_canceled'].includes((data as { state?: string } | null)?.state ?? '1_done') ? [] : [id],
   );
-  const read = await readTasks(odoo, { squad, lead, named, kept, history, now });
+  const read = await readTasks(odoo, { squad, lead, named, kept, history, previous, now });
   // A task kept open that Odoo no longer gives was deleted or archived there.
   const gone = kept.filter((id) => !read.tasks[id]);
   if (gone.length) await db.delete(odooTask).where(inArray(odooTask.id, gone));

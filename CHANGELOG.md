@@ -8,6 +8,16 @@ version's.
 
 ## Unreleased
 
+## 2.1.0 - 2026-10-23
+
+- The dashboard opens in its own window from the launcher when it runs in Docker too: `scripts/app.sh install docker`.
+  Docker starts it again after a reboot.
+- Validation is a column of its own on Me, next to My code and My reviews. A task of your validation-<trigram> tag is
+  yours to validate from Testing on; once you tag it tober+, it waits on others whatever its stage, in pink with a thumbs-up.
+  In review, a task with a validator waits for their tober+ before it is yours to review.
+- Code pushed since the tober+ or since the validator's approval on GitHub outdates the validation: its validator and its
+  reviewer are told, on Me and on its card. The dashboard dates a tober+ from the first reading that sees it come.
+
 ## 2.0.0 - 2026-10-22
 
 - A new app, to install again: a Bun server with its PostgreSQL database and a page of several pages, in place of

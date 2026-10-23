@@ -1,4 +1,16 @@
-import { type Board, type Code, codeDone, type Feat, hasRplus, rplusUndone, stageLabel, taskClosed, uniq } from './model.ts';
+import {
+  type Board,
+  type Code,
+  codeDone,
+  type Feat,
+  hasRplus,
+  rplusUndone,
+  stageLabel,
+  tagged,
+  taskClosed,
+  uniq,
+  validated,
+} from './model.ts';
 import type { Received, Request, Task } from './types.ts';
 
 /** What the reviewers said of a feature since its last code: changes asked, an approval, a comment, the r+ of each PR. */
@@ -30,14 +42,6 @@ export function stageOf(stage?: string) {
   return 'spec';
 }
 
-const tagged = (t: Task, kind: string) =>
-  t.tags.flatMap(
-    (tag) =>
-      tag
-        .trim()
-        .toLowerCase()
-        .match(new RegExp(`^${kind}-([a-z]+)$`))?.[1] ?? [],
-  );
 /** Who reviews a task: its review- tags, then its reviewer. */
 export const taskReviewers = (t: Task) => uniq([...tagged(t, 'review'), ...(t.reviewer ? [t.reviewer] : [])]);
 
@@ -137,8 +141,8 @@ export type Next = { key: string; who: string | null; detail: string };
 /**
  * Whose move a task is, from its stage and state. Spec: its author's, a dev's to take once approved. Dev: the dev's, the PO's
  * when the dev asks for details (changes requested) or hands it to testing (approved). Testing: the PO's, the dev's on changes
- * requested, the reviewer's once approved. Review: the reviewer's, the dev's on changes requested; approved, the r+ is given
- * and the code takes over: null.
+ * requested, the reviewer's once approved; validated by the PO (tober+), it waits for its test. Review: the reviewer's, the
+ * dev's on changes requested; approved, the r+ is given and the code takes over: null.
  */
 export function taskTurn(t: Task, dev: string | null, me: string): Next | null {
   const one = (people: string[]) => (people.includes(me) ? me : (people[0] ?? null));
@@ -153,7 +157,13 @@ export function taskTurn(t: Task, dev: string | null, me: string): Next | null {
   if (stage === 'spec') return approved ? next('pick', null) : next('spec', one(t.people));
   if (stage === 'dev') return changes ? next('devAsks', one(po)) : approved ? next('toTesting', one(po)) : next('dev', one(devs));
   if (stage === 'testing')
-    return changes ? next('testChanges', one(devs)) : approved ? next('toReview', one(taskReviewers(t))) : next('testing', one(po));
+    return changes
+      ? next('testChanges', one(devs))
+      : approved
+        ? next('toReview', one(taskReviewers(t)))
+        : validated(t)
+          ? next('validated', null)
+          : next('testing', one(po));
   return changes ? next('changes', one(devs)) : approved ? null : next('review', one(taskReviewers(t)));
 }
 

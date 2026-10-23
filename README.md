@@ -71,15 +71,18 @@ the Odoo key from the keyring, and who you are from your git e-mail.
 The dashboard also opens alone, in a Chrome window without tabs or address bar, from the application launcher:
 
 ```sh
-scripts/app.sh install   # once: "Dashboard" in the launcher (~/.local/share/applications)
-scripts/app.sh           # what the launcher runs
+scripts/app.sh install          # once: "Dashboard" in the launcher (~/.local/share/applications)
+scripts/app.sh install docker   # the same, when the dashboard runs in Docker
+scripts/app.sh [docker]         # what the launcher runs
 ```
 
 The script starts the server when none answers on the port; that server stops on its own 30 seconds after its last window
-closed, once a running collection is over. Its log goes to `~/.local/share/squad-dashboard/server.log`, Chrome's to
-`chrome.log` next to it. The window has its own Chrome profile, and
-the links to GitHub, mergebot or runbot open in the default browser, where you are logged in. For the compositor, the
-window is `chrome-127.0.0.1__-Default` (its Wayland app-id).
+closed, once a running collection is over. In Docker, it runs `docker compose up -d` instead, and the dashboard stays up:
+Docker brings it back after a reboot. Without the rights on Docker, the desktop asks the password (pkexec). The server's
+log goes to `~/.local/share/squad-dashboard/server.log`, Chrome's to `chrome.log` next to it. The window has its own
+Chrome profile, and the links to GitHub, mergebot or runbot open in the default browser, where you are logged in: the
+script follows them from the server, in Docker too. For the compositor, the window is `chrome-127.0.0.1__-Default` (its
+Wayland app-id).
 
 ### With Docker
 
@@ -90,7 +93,8 @@ Requirements: Docker and Compose (Fedora: `sudo dnf install moby-engine docker-c
 docker compose up -d --build
 ```
 
-Then <http://localhost:8766>. The app listens on this machine only, and its database is reachable by it alone. Docker's
+Then <http://localhost:8766>, or the app in the launcher after `scripts/app.sh install docker` (see
+[In its own window](#in-its-own-window)). The app listens on this machine only, and its database is reachable by it alone. Docker's
 database is its own, empty at first: `scripts/docker-restore.sh` copies the one of this machine into it instead of
 collecting everything again.
 

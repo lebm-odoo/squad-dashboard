@@ -86,6 +86,8 @@ export type Task = {
   reviewer: string | null;
   owner: string | null;
   tags: string[];
+  /** When a reading saw the tober+ tag come, Odoo keeping no history of tags; null when it was there at the first reading. */
+  validated_at: number | null;
   priority: number;
   deadline: number | null;
   stage_since: number | null;
@@ -100,7 +102,8 @@ export type Task = {
  * The tasks of the squad, as the squad dashboard read them: the open ones assigned to it in the R&D projects, the ones closed
  * there in the last 60 days, those the lead reviews likewise, and every task its PRs name; the `kept` ones too, open when last
  * read, for one given to someone else to stop showing as the squad's. Each change of stage or state seen is added to
- * `history`: a new stage is dated by Odoo, a new state in the same stage by this reading.
+ * `history`: a new stage is dated by Odoo, a new state in the same stage by this reading. A tober+ tag is dated by the reading
+ * that saw it come, from the `previous` reading of the task.
  */
 export async function readTasks(
   odoo: Odoo,
@@ -110,8 +113,17 @@ export async function readTasks(
     named,
     kept = [],
     history,
+    previous = {},
     now,
-  }: { squad: string[]; lead: string | null; named: number[]; kept?: number[]; history: Record<string, TaskChange[]>; now: number },
+  }: {
+    squad: string[];
+    lead: string | null;
+    named: number[];
+    kept?: number[];
+    history: Record<string, TaskChange[]>;
+    previous?: Record<string, Pick<Task, 'tags' | 'validated_at'> | null>;
+    now: number;
+  },
 ) {
   const closed = ['1_done', '1_canceled'];
   const available = Object.keys(await odoo.call<OdooRecord>('project.task', 'fields_get', { attributes: ['type'] }));
@@ -186,6 +198,7 @@ export async function readTasks(
   );
   const changes: Record<string, TaskChange[]> = {};
   const tasks: Record<string, Task> = {};
+  const tober = (tag: string) => tag.trim().toLowerCase() === 'tober+';
   for (const task of rows) {
     const stage: string | null = task.stage_id ? task.stage_id[1] : null;
     const stageSince = odooTs(task.date_last_stage_update);
@@ -193,6 +206,8 @@ export async function readTasks(
     const last = seen.at(-1);
     if (!last || last[1] !== stage || last[2] !== task.state) seen.push([!last || last[1] !== stage ? stageSince : now, stage, task.state]);
     changes[task.id] = seen;
+    const labels: string[] = (task.tag_ids ?? []).flatMap((id: number) => tags.get(id)?.name ?? []);
+    const before = previous[task.id];
     tasks[task.id] = {
       id: task.id,
       name: task.name,
@@ -204,7 +219,8 @@ export async function readTasks(
       squad: (task.user_ids ?? []).flatMap((id: number) => squadOf.get(id) ?? []),
       reviewer: task.reviewer_id ? odooPerson(task.reviewer_id[1]) : null,
       owner: task.x_owner_id ? odooPerson(task.x_owner_id[1]) : null,
-      tags: (task.tag_ids ?? []).flatMap((id: number) => tags.get(id)?.name ?? []),
+      tags: labels,
+      validated_at: !labels.some(tober) ? null : before?.tags?.some(tober) ? (before.validated_at ?? null) : before ? now : null,
       priority: Number(task.priority || 0),
       deadline: odooTs(task.date_deadline),
       stage_since: stageSince,
