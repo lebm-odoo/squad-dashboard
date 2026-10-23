@@ -8,6 +8,11 @@ version's.
 
 ## Unreleased
 
+## 2.1.1 - 2026-10-23
+
+- A task's reviewer is read from its review-<trigram> tags alone, never from the task's Reviewer field: the review a task
+  waits for, the Review column on Me, the card and the task's tooltip name only them.
+
 ## 2.1.0 - 2026-10-23
 
 - The dashboard opens in its own window from the launcher when it runs in Docker too: `scripts/app.sh install docker`.

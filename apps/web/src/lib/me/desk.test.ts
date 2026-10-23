@@ -123,11 +123,17 @@ describe('my reviews', () => {
     state: '01_in_progress',
     people: ['carl'],
     squad: [],
-    reviewer: 'ann',
-    tags: [],
+    reviewer: 'dan',
+    tags: ['review-ann'],
     links: { prs: ['odoo/odoo#9'] },
     stage_since: ago(3),
   };
+
+  test("a task's reviewer field never makes it mine to review, its review- tag alone", () => {
+    expect(deskOf({ tasks: [{ ...task, reviewer: 'ann', tags: [] }] })).toMatchObject({ now: [], waiting: [] });
+    const tested = { ...task, stage: 'RD Testing BE', state: '03_approved', reviewer: 'ann', tags: ['review-bob'] };
+    expect(deskOf({ tasks: [tested] })).toMatchObject({ now: [], waiting: [] });
+  });
 
   test('a request on the PR of a task of my review column is that task, once', () => {
     const D = deskOf({ tasks: [task], requests: [request('odoo/odoo#9')] });
@@ -235,13 +241,19 @@ describe('my reviews', () => {
     });
 
     test('in review, a task waits for its validator, then is mine to review', () => {
-      expect(deskOf({ tasks: [{ ...task, tags: ['validation-bob'] }] }).waiting).toMatchObject([{ why: 'validating', side: 'review' }]);
-      expect(deskOf({ tasks: [{ ...task, tags: ['validation-bob', 'tober+'] }] }).now).toMatchObject([{ why: 'reviewValidated' }]);
-      expect(deskOf({ tasks: [{ ...task, tags: ['validation-ann'] }] }).now).toMatchObject([{ why: 'toValidate', side: 'validate' }]);
+      expect(deskOf({ tasks: [{ ...task, tags: ['review-ann', 'validation-bob'] }] }).waiting).toMatchObject([
+        { why: 'validating', side: 'review' },
+      ]);
+      expect(deskOf({ tasks: [{ ...task, tags: ['review-ann', 'validation-bob', 'tober+'] }] }).now).toMatchObject([
+        { why: 'reviewValidated' },
+      ]);
+      expect(deskOf({ tasks: [{ ...task, tags: ['review-ann', 'validation-ann'] }] }).now).toMatchObject([
+        { why: 'toValidate', side: 'validate' },
+      ]);
     });
 
     test('code pushed since the tober+ or the validator’s approval outdates it, for its validator as for its reviewer', () => {
-      const tags = ['validation-bob', 'tober+'];
+      const tags = ['review-ann', 'validation-bob', 'tober+'];
       const outdated = (x: Partial<Task>, pushed: number, approved?: number) =>
         deskOf({ tasks: [{ ...task, tags, ...x }], features: [code(pushed, approved)] }).now.map((y) => y.why);
       expect(outdated({ validated_at: ago(3) }, ago(1))).toEqual(['validationOutdated']);

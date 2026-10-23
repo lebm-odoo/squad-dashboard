@@ -42,8 +42,8 @@ export function stageOf(stage?: string) {
   return 'spec';
 }
 
-/** Who reviews a task: its review- tags, then its reviewer. */
-export const taskReviewers = (t: Task) => uniq([...tagged(t, 'review'), ...(t.reviewer ? [t.reviewer] : [])]);
+/** Who reviews a task: its review-<trigram> tags, never the task's reviewer field. */
+export const taskReviewers = (t: Task) => uniq(tagged(t, 'review'));
 
 /** The task a feature does: the one its code names before one that links to it, an open one before a closed one. */
 export function ownTask(f: Feat) {

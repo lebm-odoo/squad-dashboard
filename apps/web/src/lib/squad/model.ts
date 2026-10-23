@@ -660,17 +660,15 @@ export class Board {
   };
 
   /**
-   * The Review column of my own pipe: the tasks I review, as reviewer or by a review-<trigram> tag, and the ones assigned to
-   * me but for my own code. In progress: mine to review (again); changes requested or on hold: the dev's to fix; approved:
+   * The Review column of my own pipe: the tasks I review, by a review-<trigram> tag, and the ones assigned to me but for my
+   * own code. In progress: mine to review (again); changes requested or on hold: the dev's to fix; approved:
    * to deploy once all is merged, forward-ports included.
    */
   reviewColumn() {
     const me = this.me;
     const out: Record<'again' | 'fixing' | 'waiting' | 'ready', ColumnItem[]> = { again: [], fixing: [], waiting: [], ready: [] };
     const mine = (t: Task) =>
-      t.reviewer === me ||
-      tagged(t, 'review').includes(me) ||
-      (t.people.includes(me) && !this.featuresOfTask(t).some((f) => f.owner === me));
+      tagged(t, 'review').includes(me) || (t.people.includes(me) && !this.featuresOfTask(t).some((f) => f.owner === me));
     for (const t of this.allTasks()) {
       if (taskClosed(t) || !/^review$/i.test(stageLabel(t.stage)) || !mine(t)) continue;
       const x = this.columnItem(t);
