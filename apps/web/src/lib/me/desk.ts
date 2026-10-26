@@ -9,6 +9,7 @@ import {
   inP,
   type Period,
   rplusUndone,
+  stageLabel,
   taskClosed,
   uniq,
 } from '../squad/model.ts';
@@ -66,8 +67,14 @@ export type DeskItem = {
   code?: Code;
   /** The PRs of the same branch in the other repositories, which the item stands for too. */
   siblings?: string[];
+  /** The stage of the Odoo task it shows, '' without one. */
+  stage: string;
   search: string;
 };
+
+/** The reasons and the Odoo stages I ignore on my desk, kept as a preference. */
+export type DeskFilter = { whys: string[]; stages: string[] };
+export const deskKeeps = (filter: DeskFilter, x: DeskItem) => !filter.whys.includes(x.why) && !filter.stages.includes(x.stage);
 
 /** Why a feature of mine is where it is, since when, and who it comes from. */
 function writing(board: Board, f: Feat, t: number): [Why, number, string?] {
@@ -110,12 +117,9 @@ export function columnWait(live: Code[]): [string, string] {
   return [moving.some((y) => y.state === 'blocked') ? 'portsBlocked' : 'portsMoving', uniq(moving.map((y) => y.branch)).join(', ')];
 }
 
-/**
- * My desk: my code, the reviews and validations I owe, by what they wait for, the most pressing first; the reviews asked of
- * my GitHub teams apart; what I merged and reviewed over a period.
- */
-export function desk(board: Board, P: Period) {
-  const order: [Why, Lane][] = [
+/** The reasons, the most pressing first, with the list each one puts an item in. */
+export function reasons(): [Why, Lane][] {
+  return [
     ['changes', 'now'],
     ['ci', 'now'],
     ['mergeBlocked', 'now'],
@@ -146,15 +150,20 @@ export function desk(board: Board, P: Period) {
     ['approved', 'waiting'],
     ['fixing', 'waiting'],
   ];
+}
+
+/**
+ * My desk: my code, the reviews and validations I owe, by what they wait for, the most pressing first; the reviews asked of
+ * my GitHub teams apart; what I merged and reviewed over a period.
+ */
+export function desk(board: Board, P: Period) {
+  const order = reasons();
   const lanes = new Map(order);
   const rank = order.map(([why]) => why);
-  const item = (side: Side, why: Why, t: number, x: Omit<DeskItem, 'side' | 'why' | 'lane' | 't'>): DeskItem => ({
-    side,
-    why,
-    lane: lanes.get(why) as Lane,
-    t,
-    ...x,
-  });
+  const item = (side: Side, why: Why, t: number, x: Omit<DeskItem, 'side' | 'why' | 'lane' | 't' | 'stage'>): DeskItem => {
+    const task = x.task ?? (x.f && board.mainTask(x.f));
+    return { side, why, lane: lanes.get(why) as Lane, t, stage: task ? stageLabel(task.stage) : '', ...x };
+  };
   // Given my r+, a review waits on the mergebot, as an approved task does, unless a push, an r- or a conflict undid it.
   const requestItem = (p: Request, code?: Code) => {
     const undone = !code?.merged && rplusUndone(p);

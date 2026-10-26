@@ -8,6 +8,7 @@ import MessageSquareCode from '@lucide/svelte/icons/message-square-code';
 import RefreshCw from '@lucide/svelte/icons/refresh-cw';
 import Search from '@lucide/svelte/icons/search';
 import Users from '@lucide/svelte/icons/users';
+import X from '@lucide/svelte/icons/x';
 import { flip } from 'svelte/animate';
 import { prefersReducedMotion } from 'svelte/motion';
 import { SvelteSet } from 'svelte/reactivity';
@@ -18,6 +19,7 @@ import ReviewLine from '#lib/components/board/ReviewLine.svelte';
 import TodoDialog from '#lib/components/board/TodoDialog.svelte';
 import Todos from '#lib/components/board/Todos.svelte';
 import InfoTip from '#lib/components/InfoTip.svelte';
+import DeskFilters from '#lib/components/me/DeskFilters.svelte';
 import DeskRow from '#lib/components/me/DeskRow.svelte';
 import Seg from '#lib/components/Seg.svelte';
 import StatCard from '#lib/components/StatCard.svelte';
@@ -30,9 +32,9 @@ import { dayLong, label, personName, rel, shortDate } from '#lib/format.ts';
 import { m, tr } from '#lib/i18n.svelte.ts';
 import { myWorkHref } from '#lib/links.ts';
 import { collect, live } from '#lib/live.svelte.ts';
-import { type DeskItem, desk, type Lane } from '#lib/me/desk.ts';
+import { type DeskItem, desk, deskKeeps, type Lane } from '#lib/me/desk.ts';
 import { words } from '#lib/me/words.ts';
-import { prefs } from '#lib/prefs.svelte.ts';
+import { ignore, prefs, setDesk } from '#lib/prefs.svelte.ts';
 import { now, periodOf } from '#lib/squad/model.ts';
 import { squadQuery } from '#lib/squad/query.svelte.ts';
 import { goto } from '$app/navigation';
@@ -48,6 +50,7 @@ let search = $state<HTMLInputElement | null>(null);
 const unfolded = new SvelteSet<string>();
 const D = $derived(board ? desk(board, periodOf(+period)) : null);
 const terms = $derived(q.trim().toLowerCase());
+const shown = (x: DeskItem) => deskKeeps(prefs.desk, x);
 const keep = (x: DeskItem) => (side === 'all' || x.side === side) && (!terms || x.search.includes(terms));
 const report = $derived(board?.data.review_requests);
 const when = $derived(m().periods[period] ?? period);
@@ -78,7 +81,7 @@ function focusSearch(event: KeyboardEvent) {
 {/snippet}
 
 {#snippet lane(name: Lane, all: DeskItem[], color: string)}
-  {@const items = all.filter(keep)}
+  {@const items = all.filter((x) => shown(x) && keep(x))}
   {@const [title, hint] = w.lanes[name] ?? ['', '']}
   <section id={name} class="scroll-mt-20">
     <h3 class="mb-1 flex items-center gap-2 text-[11.5px] font-semibold tracking-wide text-muted-foreground uppercase">
@@ -99,14 +102,16 @@ function focusSearch(event: KeyboardEvent) {
 {:else if query.isError}
   <p class="text-critical">{query.error.message}</p>
 {:else if board && D}
-  {@const reviews = D.now.filter((x) => x.side === 'review').length}
-  {@const validations = D.now.filter((x) => x.side === 'validate').length}
+  {@const F = { now: D.now.filter(shown), doing: D.doing.filter(shown), waiting: D.waiting.filter(shown) }}
+  {@const ignored = [...D.now, ...D.doing, ...D.waiting].filter((x) => !shown(x)).length}
+  {@const reviews = F.now.filter((x) => x.side === 'review').length}
+  {@const validations = F.now.filter((x) => x.side === 'validate').length}
   {@const teams = side === 'write' || side === 'validate' ? [] : D.teams.filter(keep)}
   <div class="mb-5 flex flex-wrap items-end gap-x-4 gap-y-3">
     <div class="min-w-0 flex-1">
       <p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">{dayLong(now())}</p>
       <h1 class="mt-0.5 text-2xl font-semibold tracking-tight">{w.hello(label(board.me))}</h1>
-      <p class="mt-1 text-sm text-muted-foreground">{w.summary(D.now.length, D.doing.length, D.waiting.length)}</p>
+      <p class="mt-1 text-sm text-muted-foreground">{w.summary(F.now.length, F.doing.length, F.waiting.length)}</p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
       <Button variant="outline" size="sm" disabled={!!live.state?.running} title={w.reloadTitle} onclick={() => collect('me')}>
@@ -116,9 +121,9 @@ function focusSearch(event: KeyboardEvent) {
   </div>
 
   <div class="mb-5 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-    <StatCard icon={Inbox} label={w.kpi.now} value={D.now.length} hint={w.kpi.nowHint(reviews, validations, D.now.length - reviews - validations)} href="#now" />
-    <StatCard icon={Hammer} label={w.kpi.doing} value={D.doing.length} hint={w.kpi.doingHint} href="#doing" />
-    <StatCard icon={Hourglass} label={w.kpi.waiting} value={D.waiting.length} hint={w.kpi.waitingHint} href="#waiting" />
+    <StatCard icon={Inbox} label={w.kpi.now} value={F.now.length} hint={w.kpi.nowHint(reviews, validations, F.now.length - reviews - validations)} href="#now" />
+    <StatCard icon={Hammer} label={w.kpi.doing} value={F.doing.length} hint={w.kpi.doingHint} href="#doing" />
+    <StatCard icon={Hourglass} label={w.kpi.waiting} value={F.waiting.length} hint={w.kpi.waitingHint} href="#waiting" />
     <StatCard icon={GitMerge} label={w.kpi.merged} value={D.merged.length} hint={w.kpi.over(when)} href="#done" />
     <StatCard icon={MessageSquareCode} label={w.kpi.reviewed} value={D.reviewed.length} hint={w.kpi.over(when)} href="#done" />
   </div>
@@ -130,20 +135,34 @@ function focusSearch(event: KeyboardEvent) {
         <Tabs.Root value={side} onValueChange={(value) => (side = value)}>
           <Tabs.List>
             {#each ['all', 'write', 'review', 'validate'] as key (key)}
-              {@const n = [...D.now, ...D.doing, ...D.waiting].filter((x) => key === 'all' || x.side === key).length}
+              {@const n = [...F.now, ...F.doing, ...F.waiting].filter((x) => key === 'all' || x.side === key).length}
               <Tabs.Trigger value={key}>{w.sides[key]} <span class="text-muted-foreground tabular-nums">{n}</span></Tabs.Trigger>
             {/each}
           </Tabs.List>
         </Tabs.Root>
-        <label class="relative ml-auto w-full sm:w-56">
-          <Search class="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input bind:ref={search} type="search" class="h-8 pr-7 pl-8" bind:value={q} placeholder={w.search} aria-label={w.search} />
-          <kbd class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 rounded border px-1 text-[10.5px] text-muted-foreground">/</kbd>
-        </label>
+        <div class="ml-auto flex w-full items-center gap-2 sm:w-auto">
+          <DeskFilters {board} items={[...D.now, ...D.doing, ...D.waiting]} />
+          <label class="relative min-w-0 flex-1 sm:w-56 sm:flex-none">
+            <Search class="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input bind:ref={search} type="search" class="h-8 pr-7 pl-8" bind:value={q} placeholder={w.search} aria-label={w.search} />
+            <kbd class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 rounded border px-1 text-[10.5px] text-muted-foreground">/</kbd>
+          </label>
+        </div>
       </Card.Header>
       <Card.Content class="flex flex-col gap-5 px-[18px]">
         {#if board.data.odoo?.error}
           <p class="rounded-md bg-critical/10 px-3 py-2 text-[12.5px] text-critical">{w.odooError(rel(board.data.odoo.at), board.data.odoo.error)}</p>
+        {/if}
+        {#if ignored}
+          <div class="-mb-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+            {w.filter.ignored(ignored)}
+            {#each [...prefs.desk.stages.map((value) => ['stages', value] as const), ...prefs.desk.whys.map((value) => ['whys', value] as const)] as [key, value] (key + value)}
+              <button class="rtag cursor-pointer hover:text-critical" title={w.filter.showAgain} onclick={() => ignore(key, value)}>
+                {key === 'stages' ? value || w.filter.noTask : (w.filter.reasons[value] ?? value)}<X class="size-3" />
+              </button>
+            {/each}
+            <button class="linkish text-link" onclick={() => setDesk({ whys: [], stages: [] })}>{w.filter.showAll}</button>
+          </div>
         {/if}
         {@render lane('now', D.now, 'var(--critical)')}
         {@render lane('doing', D.doing, 'var(--link)')}

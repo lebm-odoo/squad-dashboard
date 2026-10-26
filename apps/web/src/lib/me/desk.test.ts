@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { Board, DAY, now, periodOf } from '../squad/model.ts';
 import type { Feature, Request, ReviewedPr, SquadData, Task } from '../squad/types.ts';
-import { desk } from './desk.ts';
+import { type DeskFilter, desk, deskKeeps } from './desk.ts';
 
 const ago = (days: number) => now() - days * DAY;
 const feature = (name: string, x: Partial<Feature>): Feature => ({
@@ -305,5 +305,40 @@ describe('my reviews', () => {
       { why: 'undone', key: 'pr:odoo/odoo#30', t: one },
     ]);
     expect(D.waiting).toMatchObject([{ why: 'approved', key: 'pr:odoo/odoo#33' }]);
+  });
+});
+
+describe('my filter', () => {
+  test('ignores the items of a reason or of an Odoo stage, those without a task by an empty stage', () => {
+    const backlog: Task = {
+      id: 5,
+      name: 'Later',
+      stage: 'RD Backlog',
+      state: '01_in_progress',
+      people: ['ann'],
+      squad: ['ann'],
+      tags: [],
+      stage_since: ago(20),
+    };
+    const D = deskOf({
+      features: [feature('draft', { prs: [{ repo: 'odoo/odoo', number: 2, state: 'open', draft: true }] })],
+      requests: [request('odoo/odoo#10')],
+      tasks: [backlog],
+    });
+    const all = [...D.now, ...D.doing, ...D.waiting];
+    const kept = (filter: DeskFilter) =>
+      all
+        .filter((x) => deskKeeps(filter, x))
+        .map((x) => x.key)
+        .sort();
+    expect(all.map((x) => [x.key, x.stage])).toEqual(
+      expect.arrayContaining([
+        ['task:5', 'Backlog'],
+        ['feature:draft', ''],
+        ['pr:odoo/odoo#10', ''],
+      ]),
+    );
+    expect(kept({ whys: [], stages: ['Backlog'] })).toEqual(['feature:draft', 'pr:odoo/odoo#10']);
+    expect(kept({ whys: ['draft'], stages: [''] })).toEqual(['task:5']);
   });
 });
