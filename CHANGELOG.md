@@ -8,6 +8,8 @@ version's.
 
 ## Unreleased
 
+## 2.1.2 - 2026-10-26
+
 - A task's code is the code of the work doing it, as its card shows: a branch that only names it, one based on the wrong
   version for one, no longer keeps an approved and merged task in Waiting on others: it waits for you, to move to Deployed.
 

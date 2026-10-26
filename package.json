@@ -1,6 +1,6 @@
 {
   "name": "squad-dashboard",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "repository": "github:lebm-odoo/squad-dashboard",
   "private": true,
   "type": "module",
