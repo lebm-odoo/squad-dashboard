@@ -88,6 +88,15 @@ export const lastActivity = (f: Feat) => (f._activity.length ? Math.max(...f._ac
 export const inProgress = (f: Feature) => f.status === 'open' || (f.status === 'wip' && !f.deleted);
 export const statusKey = (f: Feat) => (f.status === 'open' && f._draft ? 'draft' : f.status);
 export const taskClosed = (t: Task) => t.state === '1_done' || t.state === '1_canceled';
+/** The task a feature does: the one its code names before one that links to it, an open one before a closed one. */
+export function ownTask(f: Feat) {
+  const ranks = ['code', 'task', 'guess'];
+  return [...f._tasks].sort(
+    (a, b) =>
+      ranks.indexOf(f._taskHow.get(a) ?? 'guess') - ranks.indexOf(f._taskHow.get(b) ?? 'guess') ||
+      Number(taskClosed(a)) - Number(taskClosed(b)),
+  )[0];
+}
 /** The trigrams of a task's <kind>-<trigram> tags. */
 export const tagged = (t: Task, kind: string) =>
   t.tags.flatMap(
@@ -472,6 +481,12 @@ export class Board {
   }
   featuresOf = (person: string) => this.allFeaturesOf(person).filter((f) => f.kind !== 'forward-port');
   featuresOfTask = (t: Task) => this.features.filter((f) => f.kind !== 'forward-port' && f._tasks.includes(t));
+  /** The features doing a task, as its card shows them: one that does another task only relates to it, unless none does it. */
+  taskFeatures = (t: Task) => {
+    const linked = this.featuresOfTask(t);
+    const own = linked.filter((f) => ownTask(f) === t);
+    return own.length ? own : linked;
+  };
   isGuess = (f: Feat, t: Task) => f._taskHow.get(t) === 'guess';
   /** The task that tells where a feature stands: an open one before a closed one, a real link before a guess, the last moved first. */
   mainTask = (f: Feat) =>
@@ -607,12 +622,12 @@ export class Board {
   /** The PRs of a task: those of its features, the reviewed ones that name it, the ones it links to. */
   prsOfTask = (t: Task) =>
     uniq([
-      ...this.featuresOfTask(t).flatMap((f) => f.prs.map((p) => `${p.repo}#${p.number}`)),
+      ...this.taskFeatures(t).flatMap((f) => f.prs.map((p) => `${p.repo}#${p.number}`)),
       ...Object.entries(this.data.reviewed_prs).flatMap(([key, pr]) => (pr.tasks.includes(String(t.id)) ? [key] : [])),
       ...(t.links?.prs ?? []),
     ]);
   codeOfTask(t: Task) {
-    const feats = this.featuresOfTask(t);
+    const feats = this.taskFeatures(t);
     const own = new Set(feats.flatMap((f) => f.prs.map((p) => `${p.repo}#${p.number}`)));
     const prs = Object.entries(this.data.reviewed_prs).filter(
       ([key, pr]) => !own.has(key) && !this.prFeature(key) && (pr.tasks.includes(String(t.id)) || (t.links?.prs || []).includes(key)),
@@ -629,7 +644,7 @@ export class Board {
     const by = tagged(t, 'validation');
     if (!by.length) return null;
     if (!validated(t)) return { by, state: 'pending', at: 0, pushed: 0 };
-    const features = this.featuresOfTask(t).filter((f) => !this.isGuess(f, t));
+    const features = this.taskFeatures(t).filter((f) => !this.isGuess(f, t));
     const prs = this.prsOfTask(t);
     const at = Math.max(
       t.validated_at ?? 0,

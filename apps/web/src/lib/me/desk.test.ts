@@ -271,6 +271,21 @@ describe('my reviews', () => {
     expect(D.waiting).toMatchObject([{ why: 'approved', side: 'review' }]);
   });
 
+  test('an approved task merged up to master is mine to deploy, whatever open code doing another task names it', () => {
+    const D = deskOf({
+      tasks: [
+        { ...task, state: '03_approved' },
+        { ...task, id: 6, stage: 'RD Dev', people: ['eve'], tags: [], links: {} },
+      ],
+      features: [
+        feature('fix', { owner: 'carl', status: 'merged', merged_at: ago(2), prs: [{ repo: 'odoo/odoo', number: 9, state: 'merged' }] }),
+        feature('wrong-base', { owner: 'eve', prs: [{ repo: 'odoo/odoo', number: 10, state: 'open' }], tasks: ['6', '7'] }),
+      ],
+    });
+    expect(D.now).toMatchObject([{ why: 'deploy', key: 'task:7' }]);
+    expect(D.waiting).toEqual([]);
+  });
+
   test('a push, an r- or a conflict after my r+ brings the review back to me, its task too; before it, nothing', () => {
     const [one, two, three, four, five] = [1, 2, 3, 4, 5].map(ago);
     const D = deskOf({
