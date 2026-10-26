@@ -20,8 +20,19 @@ import { age, fdate, personName, rel, shortDate } from '#lib/format.ts';
 import { m, tr } from '#lib/i18n.svelte.ts';
 import { myWorkHref, workHref } from '#lib/links.ts';
 import { words } from '#lib/me/words.ts';
-import { type Board, featureTopics, hasRplus, prUrl, rplusUndone, stageLabel, taskUrl, uniq, versionNumber } from '#lib/squad/model.ts';
-import { ownTask, progress, reviewState, stageOf, taskReviewers, type Unit } from '#lib/squad/unit.ts';
+import {
+  type Board,
+  featureTopics,
+  hasRplus,
+  ownTask,
+  prUrl,
+  rplusUndone,
+  stageLabel,
+  taskUrl,
+  uniq,
+  versionNumber,
+} from '#lib/squad/model.ts';
+import { progress, reviewState, stageOf, taskReviewers, type Unit } from '#lib/squad/unit.ts';
 import { todos } from '#lib/todos.svelte.ts';
 import Block from './Block.svelte';
 import Branch from './Branch.svelte';

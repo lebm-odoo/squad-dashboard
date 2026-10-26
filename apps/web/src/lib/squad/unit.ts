@@ -4,6 +4,7 @@ import {
   codeDone,
   type Feat,
   hasRplus,
+  ownTask,
   rplusUndone,
   stageLabel,
   tagged,
@@ -44,16 +45,6 @@ export function stageOf(stage?: string) {
 
 /** Who reviews a task: its review-<trigram> tags, never the task's reviewer field. */
 export const taskReviewers = (t: Task) => uniq(tagged(t, 'review'));
-
-/** The task a feature does: the one its code names before one that links to it, an open one before a closed one. */
-export function ownTask(f: Feat) {
-  const ranks = ['code', 'task', 'guess'];
-  return [...f._tasks].sort(
-    (a, b) =>
-      ranks.indexOf(f._taskHow.get(a) ?? 'guess') - ranks.indexOf(f._taskHow.get(b) ?? 'guess') ||
-      Number(taskClosed(a)) - Number(taskClosed(b)),
-  )[0];
-}
 
 /**
  * One piece of work whatever it is opened from, a feature, a PR or a task: its task, the features doing it (their ports by
