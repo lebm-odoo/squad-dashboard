@@ -167,7 +167,7 @@ export type SquadData = {
   reviewed_prs: Record<string, ReviewedPr>;
   odoo: {
     tasks: Record<string, Task>;
-    stages: Record<string, { fold?: boolean }>;
+    stages: Record<string, { name?: string; sequence?: number; fold?: boolean }>;
     at: number | null;
     error: string | null;
     not_found: string[];
