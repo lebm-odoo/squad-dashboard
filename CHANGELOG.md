@@ -8,6 +8,8 @@ version's.
 
 ## Unreleased
 
+## 2.2.0 - 2026-10-26
+
 - Me: a Filters button ignores reasons or Odoo stages in Waiting for me, In progress and Waiting on others, tasks still in
   the backlog for one. This browser keeps the choice; a line above the lists names what is ignored, a click shows it again.
 
